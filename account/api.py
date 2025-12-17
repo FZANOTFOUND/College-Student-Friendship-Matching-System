@@ -14,7 +14,7 @@ from werkzeug.datastructures import MultiDict
 from werkzeug.security import generate_password_hash, check_password_hash  # 对密码进行加密
 from extensions import mail, db
 from models import EmailVerification, User
-
+from decorators import *
 
 @api_account_bp.route('/register', methods=['POST'])
 def register():

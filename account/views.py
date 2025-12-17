@@ -14,7 +14,7 @@ from werkzeug.datastructures import MultiDict
 from werkzeug.security import generate_password_hash, check_password_hash  # 对密码进行加密
 from extensions import mail, db
 from models import EmailVerification, User
-
+from decorators import *
 
 @account_bp.route('/register', methods=['GET', 'POST'])
 def register():
@@ -27,6 +27,6 @@ def login():
 
 
 @account_bp.route('/protected')
-@jwt_required()
+@jwt_required_or_redirect()
 def protected():
     return render_template('account/protected.html')
