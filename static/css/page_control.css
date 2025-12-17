@@ -1,0 +1,85 @@
+/* 页面背景（你可替换为自己的背景） */
+body {
+    margin: 0;
+    padding: 0;
+    height: 100vh;
+    background: linear-gradient(135deg, #e8eef7, #ffffff);
+    font-family: "Segoe UI", Arial, sans-serif;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+/* 外部容器，保证标题和框整体居中 */
+.container {
+    text-align: center;
+}
+
+/* 标题 */
+.title {
+    font-size: 42px;
+    font-weight: 700;
+    margin-bottom: 30px;
+    color: #2b3e55;
+    letter-spacing: 2px;
+}
+
+/* 包住按钮的卡片框 */
+.panel {
+    padding: 30px 40px;
+    background: rgba(255, 255, 255, 0.65);
+    border-radius: 20px;
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+    backdrop-filter: blur(10px);
+    display: flex;
+    flex-direction: row;
+    gap: 24px;
+    justify-content: center;
+}
+
+/* 精美按钮（沿用之前提供的） */
+.nice-btn {
+    padding: 14px 30px;
+    font-size: 20px;
+    border: none;
+    border-radius: 12px;
+    cursor: pointer;
+    background: linear-gradient(135deg, #4a90e2, #6fb3ff);
+    color: white;
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.15);
+    transition: 0.25s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.nice-btn:hover {
+    transform: translateY(-3px) scale(1.03);
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+}
+
+.nice-btn:active {
+    transform: translateY(0px) scale(1);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+}
+
+/* 点击波纹效果 */
+.nice-btn::after {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 5px;
+    height: 5px;
+    background: rgba(255, 255, 255, 0.7);
+    border-radius: 50%;
+    transform: translate(-50%, -50%) scale(1);
+    opacity: 0;
+    transition: 0s;
+}
+
+.nice-btn:active::after {
+    width: 180px;
+    height: 180px;
+    opacity: 0;
+    transition: 0.6s;
+}

@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="560" height="420" viewBox="0 0 560 420" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="illustration">
+<defs>
+<linearGradient id="g1" x1="0" x2="1">
+<stop offset="0" stop-color="#0ea5a4" stop-opacity="0.12"/>
+<stop offset="1" stop-color="#06b6d4" stop-opacity="0.06"/>
+</linearGradient>
+<linearGradient id="g2" x1="0" x2="1">
+<stop offset="0" stop-color="#f59e0b" stop-opacity="0.12"/>
+<stop offset="1" stop-color="#ef4444" stop-opacity="0.06"/>
+</linearGradient>
+</defs>
+
+
+<!-- simple device + document motif -->
+<rect x="40" y="40" width="480" height="300" rx="20" fill="#f8fafc" stroke="#e6eef8" />
+
+
+<!-- screen area -->
+<rect x="68" y="80" width="424" height="200" rx="8" fill="url(#g1)" />
+
+
+<!-- card inside screen -->
+<rect x="100" y="110" width="320" height="140" rx="8" fill="#ffffff" stroke="#eef2f7" />
+<rect x="124" y="132" width="64" height="16" rx="4" fill="#0f172a" opacity="0.9" />
+<rect x="124" y="156" width="220" height="12" rx="4" fill="#6b7280" opacity="0.18" />
+<rect x="124" y="176" width="160" height="12" rx="4" fill="#6b7280" opacity="0.12" />
+
+
+<!-- big numeric hint -->
+<text x="360" y="180" font-family="Inter, Arial, sans-serif" font-size="56" font-weight="800" fill="#0ea5a4">404</text>
+
+
+<!-- small accent element -->
+<circle cx="460" cy="320" r="36" fill="url(#g2)" />
+<path d="M448 312l24 24" stroke="#fff" stroke-width="3" stroke-linecap="round"/>
+<path d="M472 312l-24 24" stroke="#fff" stroke-width="3" stroke-linecap="round"/>
+
+
+<!-- subtle shadow -->
+<ellipse cx="280" cy="360" rx="180" ry="22" fill="#0f172a" opacity="0.04"/>
+</svg>

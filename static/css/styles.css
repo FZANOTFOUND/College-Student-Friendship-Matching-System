@@ -1,0 +1,10 @@
+/* small custom styles to make forms look nicer */
+body {
+  background-color: #f6f8fa;
+}
+.card {
+  border-radius: 12px;
+}
+.card .card-body {
+  padding: 1.6rem;
+}

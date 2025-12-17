@@ -1,0 +1,223 @@
+/* static/codeforces_rating.css
+   美化版：包含控件样式、卡片布局与 color-class（user-red/user-orange/…）
+   覆盖此文件即可生效。
+*/
+
+/* 页面基础：浅色渐变背景与居中容器 */
+:root{
+  --bg-top: #fbfbff;
+  --bg-bottom: #f3f7fb;
+  --card-bg: #ffffff;
+  --muted: #666;
+  --accent: #6b2b6b;
+  --glass: rgba(255,255,255,0.6);
+  --soft-shadow: 0 6px 18px rgba(19,24,28,0.06);
+  --border: #e8eaf0;
+}
+
+/* overall page */
+body {
+  font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+  background: linear-gradient(180deg, var(--bg-top) 0%, var(--bg-bottom) 100%);
+  color: #222;
+  margin: 0;
+  padding: 20px;
+  -webkit-font-smoothing:antialiased;
+  -moz-osx-font-smoothing:grayscale;
+}
+.page { max-width: 980px; margin: 0 auto; }
+
+/* title */
+.title {
+  font-size: 22px;
+  margin-bottom: 16px;
+  color: #222;
+  font-weight: 700;
+}
+
+/* Controls / Query box container: glass card look */
+.controls {
+  display:flex;
+  gap:12px;
+  align-items:center;
+  margin-bottom: 14px;
+  background: linear-gradient(180deg, rgba(255,255,255,0.7), rgba(255,255,255,0.55));
+  padding: 12px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  box-shadow: var(--soft-shadow);
+}
+
+/* input */
+.input, #handleInput {
+  min-width:420px;
+  padding:10px 12px;
+  font-size:15px;
+  border:1px solid #d6dbe6;
+  border-radius:8px;
+  background: white;
+  box-shadow: inset 0 1px 0 rgba(0,0,0,0.02);
+  outline: none;
+  transition: box-shadow .14s ease, transform .08s ease, border-color .12s ease;
+}
+.input:focus, #handleInput:focus {
+  box-shadow: 0 6px 18px rgba(59,89,152,0.08);
+  border-color: rgba(107,43,107,0.9);
+  transform: translateY(-1px);
+}
+
+/* button */
+.btn, #fetchBtn {
+  padding:9px 14px;
+  border-radius:8px;
+  border:1px solid rgba(0,0,0,0.08);
+  background: linear-gradient(180deg,#ffffff,#f2f4f8);
+  cursor:pointer;
+  font-weight:600;
+  color:#222;
+  transition: transform .08s ease, box-shadow .12s ease;
+}
+.btn:hover, #fetchBtn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(19,24,28,0.08);
+}
+.btn:active, #fetchBtn:active {
+  transform: translateY(0);
+}
+
+/* counts / status */
+.counts { font-weight:700; margin-left:6px; color:#111; }
+.status { color:var(--muted); margin-left:8px; font-size:13px; }
+
+/* results area */
+.results { display:flex; flex-direction:column; gap:16px; margin-top:12px; }
+
+/* card base */
+.user-card {
+  display:flex;
+  gap:18px;
+  align-items:flex-start;
+  padding:16px;
+  border-radius:12px;
+  border:1px solid var(--border);
+  background: linear-gradient(180deg, rgba(255,255,255,0.95), rgba(250,250,252,0.95));
+  box-shadow: 0 6px 18px rgba(19,24,28,0.04);
+  transition: transform .12s ease, box-shadow .12s ease;
+}
+.user-card.error {
+  background: linear-gradient(180deg,#fff7f7,#fff7f7);
+  border-color: #f3caca;
+  color:#a33131;
+  box-shadow: none;
+}
+.user-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 30px rgba(19,24,28,0.08);
+}
+
+/* left avatar */
+.card-left { flex:0 0 84px; display:flex; align-items:flex-start; }
+.card-avatar {
+  width:72px;
+  height:72px;
+  border-radius:10px;
+  object-fit:cover;
+  background:#f5f5f7;
+  border: 1px solid rgba(0,0,0,0.04);
+  box-shadow: 0 2px 6px rgba(0,0,0,0.03);
+}
+
+/* right info */
+.card-right { flex:1 1 auto; display:flex; flex-direction:column; gap:8px; }
+
+/* rank title + display name */
+.rank-title {
+  font-weight:700;
+  font-size:15px;
+  text-transform:capitalize;
+  color:var(--accent);
+  opacity:0.95;
+  letter-spacing:0.2px;
+}
+.display-name {
+  font-size:28px;
+  font-weight:800;
+  line-height:1.1;
+  /* 保持原样大小写，不强制 uppercase */
+  text-transform: none;
+  color: #181818;
+  word-break:break-word;
+}
+
+/* rating line: 均匀靠左，间距更紧凑 */
+.rating-line {
+  display:flex;
+  gap:8px;
+  align-items:center;
+  font-size:15px;
+  color:#222;
+}
+.rating-icon { width:22px; height:22px; display:inline-flex; align-items:center; justify-content:center; }
+.rating-icon svg { display:block; }
+
+/* label 和数值间距缩小 */
+.rating-label {
+  font-weight:600;
+  color:#444;
+  margin-right: 6px; /* 缩小到 6px，更紧凑 */
+}
+.rating-value {
+  font-weight:800;
+  margin-right: 6px;
+}
+
+/* max info: 前面的 max. 保持黑色，后面（maxrank/maxrating）按 rating 颜色 */
+.max-info { font-weight:600; margin-left: 2px; margin-right: 2px;}
+
+/* small helpers */
+.bold { font-weight:700; }
+
+/* responsive tweaks */
+@media (max-width: 720px) {
+  .controls { flex-direction:column; align-items:flex-start; gap:8px; }
+  .input { min-width:260px; width:100%; }
+  .display-name { font-size:20px; }
+  .rank-title { font-size:14px; }
+  .user-card { padding:12px; gap:12px; }
+  .card-avatar { width:60px; height:60px; }
+}
+
+/* accessibility: focus outlines */
+.input:focus, .btn:focus, #fetchBtn:focus {
+  outline: 3px solid rgba(107,43,107,0.12);
+  outline-offset: 2px;
+}
+
+/* tiny polish for rating icon area */
+.rating-icon { filter: drop-shadow(0 1px 1px rgba(0,0,0,0.04)); border-radius: 4px; }
+
+/* cache = true → 显示 cache */
+.user-card[data-cache="true"]::after {
+  content: "cache";
+  display: inline-block;
+  font-size: 11px;
+  color: #fff;
+  background: #6b2b6b;
+  padding: 4px 8px;
+  border-radius: 999px;
+  margin-left: 12px;
+  vertical-align: middle;
+}
+
+/* cache != true → 显示 real */
+.user-card:not([data-cache="true"])::after {
+  content: "real";
+  display: inline-block;
+  font-size: 11px;
+  color: #fff;
+  background: #2b6b5b;
+  padding: 4px 8px;
+  border-radius: 999px;
+  margin-left: 12px;
+  vertical-align: middle;
+}
