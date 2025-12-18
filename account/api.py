@@ -1,3 +1,5 @@
+import time
+
 from flask import render_template, redirect, url_for, request, flash
 from . import account_bp, api_account_bp
 from models import User
@@ -154,8 +156,9 @@ def get_email_captcha():
     source = string.digits * 4
     code = random.sample(source, 4)
     code = ''.join(code)
+    t = time.localtime(time.time())
     message = Message(subject='流萤快报', recipients=[email],
-                      html=f'<h1>流萤提醒您，您的验证码是：<text style="color:red">{code}</text>，请在 10分钟内 完成验证.</h1>')
+                      html=render_template("email.html", code=code, hour = t.tm_hour) )
     mail.send(message)
     email_captcha = EmailVerification(email=email, code=code)
     db.session.add(email_captcha)

@@ -1,6 +1,7 @@
 document.addEventListener('DOMContentLoaded', function () {
     const btn = document.getElementById('sendCodeBtn');
     btn.addEventListener('click', function () {
+        clearContainer();
         const email = document.getElementById('email').value.trim();
         fetch(`/api/account/code/email?email=${encodeURIComponent(email)}`)
             .then(res => res.json())

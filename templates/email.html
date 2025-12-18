@@ -1,0 +1,9 @@
+<h1>
+    流萤提醒您，您的验证码是：
+    <span style="color:red">{{ code }}</span>
+    ，请在 10 分钟内完成验证。
+</h1>
+
+{% if hour <= 4 or hour >= 20 %}
+    <h2>纳西妲提醒您，夜已深，注意休息喵。</h2>
+{% endif %}
