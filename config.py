@@ -20,3 +20,22 @@ MAIL_PORT = 465
 MAIL_USERNAME = '2629669459@qq.com'
 MAIL_PASSWORD = 'vfgbjjhroicgdjfg'
 MAIL_DEFAULT_SENDER = '2629669459@qq.com'
+
+JWT_SECRET_KEY = "super-secret-key"
+
+# 使用 cookie 存 JWT
+JWT_TOKEN_LOCATION = ["cookies"]
+
+# Cookie 名
+JWT_ACCESS_COOKIE_NAME = "access_token"
+JWT_REFRESH_COOKIE_NAME = "refresh_token"
+
+# 防 CSRF（强烈建议）
+JWT_COOKIE_CSRF_PROTECT = True,
+
+# 跨域必须
+JWT_COOKIE_SAMESITE = "Lax"
+JWT_COOKIE_SECURE = False  # https 才能用（开发时可 False）
+
+# 默认 access token 过期时间
+JWT_ACCESS_TOKEN_EXPIRES = timedelta(minutes=15)

@@ -18,7 +18,21 @@ function logout_client(){
     clearContainer();
     clearLocalStorage();
 }
+function handleLogout() {
 
+    fetch("/api/account/logout",{
+        method: 'POST',
+        credentials: "include",
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest',
+            'Accept': 'application/json',
+        }})
+        .finally()
+    {
+        logout_client();
+        location.reload();
+    }
+}
 function clearLocalStorage(){
     localStorage.clear();
 }
@@ -57,6 +71,18 @@ function insertContainer(category, message) {
     container.appendChild(el);
 }
 
+async function checkLogin() {
+    const resp = await fetch("/api/account/me", {
+        credentials: "include"
+    });
+
+    if (resp.code === 200) {
+        const data = await resp.json();
+        return { loggedIn: true, data: data.data };
+    } else {
+        return { loggedIn: false };
+    }
+}
 document.addEventListener("DOMContentLoaded", () => {
     const navMenu = document.getElementById("navMemu");
     if(navMenu === null){

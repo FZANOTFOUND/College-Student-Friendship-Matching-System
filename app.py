@@ -5,8 +5,11 @@ from errors import errors_bp
 from flask import Flask, render_template
 from dotenv import load_dotenv
 from flask_login import current_user
-from extensions import db, mail, jwt, cors, bcrypt
+from extensions import db, mail, jwt, bcrypt, cors
+from flask_cors import CORS
 from flask_migrate import Migrate
+from datetime import timedelta
+
 # load env
 load_dotenv()
 
@@ -22,6 +25,13 @@ app.config['WTF_CSRF_ENABLED'] = False
 db.init_app(app)
 mail.init_app(app)
 jwt.init_app(app)
+cors._options = {"supports_credentials": True,
+                 "origins": [
+                     r"http://localhost:\d+",
+                     r"http://127\.0\.0\.1:\d+",
+                     r"http://192\.168\.\d+\.\d+:\d+",
+                     r"http://10\.\d+\.\d+\.\d+:\d+",
+                 ]}
 cors.init_app(app)
 bcrypt.init_app(app)
 Migrate(app, db)

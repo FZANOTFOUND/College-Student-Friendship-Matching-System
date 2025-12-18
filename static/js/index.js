@@ -47,23 +47,7 @@ document.addEventListener("DOMContentLoaded", () => {
         const a2 = document.createElement('button');
         a2.className = 'btn btn-outline-secondary';
         a2.textContent = '登出';
-        a2.addEventListener('click', () => {
-
-            fetch("/api/account/logout",{
-            method: 'POST',
-
-            headers: {
-                'X-Requested-With': 'XMLHttpRequest',
-                'Accept': 'application/json',
-                'Authorization': "Bearer " + localStorage.getItem('token'),
-            }})
-                .finally()
-            {
-                logout_client();
-                location.reload();
-            }
-
-        })
+        a2.addEventListener('click', handleLogout)
         cardMenu.appendChild(a2);
     }
     else{

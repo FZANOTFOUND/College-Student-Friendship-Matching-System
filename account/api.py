@@ -7,7 +7,11 @@ from .forms import RegisterForm, LoginForm
 import string
 import random
 import re
-
+from flask_jwt_extended import (
+    create_access_token,
+    set_access_cookies,
+    unset_jwt_cookies
+)
 from flask import Blueprint, request, jsonify, current_app
 from flask_jwt_extended import create_access_token, create_refresh_token, jwt_required, get_jwt_identity
 from flask_mail import Message
@@ -17,6 +21,7 @@ from werkzeug.security import generate_password_hash, check_password_hash  # 对
 from extensions import mail, db
 from models import EmailVerification, User
 from decorators import *
+
 
 @api_account_bp.route('/register', methods=['POST'])
 def register():
@@ -34,12 +39,22 @@ def register():
             password = form.password.data
             gender = form.gender.data
             age = form.age.data
+            remember = form_data.get("remember", False)
+            expires = (
+                timedelta(days=7) if remember
+                else timedelta(hours=2)
+            )
 
+            access_token = create_access_token(
+                identity=username,
+                expires_delta=expires
+            )
             hashed_password = generate_password_hash(password)
             user = User(email=email, username=username, password_hash=hashed_password, gender=gender, age=age)
             db.session.add(user)
             db.session.commit()
             db.session.close()
+
             return jsonify({
                 "code": 200,
                 "message": "注册成功",
@@ -99,7 +114,7 @@ def login():
 
             if check_password_hash(user.password_hash, password):
                 access_token = create_access_token(identity=str(user.user_id))
-                return jsonify({
+                resp = jsonify({
                     "code": 200,
                     "message": "登录成功",
                     "errors": {
@@ -114,7 +129,9 @@ def login():
                         "bio": user.bio,
                         "token": access_token
                     }
-                }), 200
+                })
+                set_access_cookies(resp, access_token)
+                return resp, 200
             else:
                 return jsonify({
                     "code": 400,
@@ -158,7 +175,7 @@ def get_email_captcha():
     code = ''.join(code)
     t = time.localtime(time.time())
     message = Message(subject='流萤快报', recipients=[email],
-                      html=render_template("email.html", code=code, hour = t.tm_hour) )
+                      html=render_template("email.html", code=code, hour=t.tm_hour))
     mail.send(message)
     email_captcha = EmailVerification(email=email, code=code)
     db.session.add(email_captcha)
@@ -171,4 +188,6 @@ def get_email_captcha():
 @jwt_required()
 def logout():
     """用户登出"""
-    return jsonify({'code': 200, 'message': '登出成功'})
+    resp = jsonify({'code': 200, 'message': '登出成功'})
+    unset_jwt_cookies(resp)
+    return resp
