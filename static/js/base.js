@@ -27,11 +27,10 @@ function handleLogout() {
             'X-Requested-With': 'XMLHttpRequest',
             'Accept': 'application/json',
         }})
-        .finally()
-    {
-        logout_client();
-        location.reload();
-    }
+        .finally(() => {
+            logout_client();
+            window.location.href = '/';
+        });
 }
 function clearLocalStorage(){
     localStorage.clear();
@@ -72,17 +71,17 @@ function insertContainer(category, message) {
 }
 
 async function checkLogin() {
-    const resp = await fetch("/api/account/me", {
+    const resp = await fetch("/api/account/profile", {
         credentials: "include"
-    });
+    }).then(r => r.json());
 
     if (resp.code === 200) {
-        const data = await resp.json();
-        return { loggedIn: true, data: data.data };
+        return { loggedIn: true, data: resp.data };
     } else {
         return { loggedIn: false };
     }
 }
+
 document.addEventListener("DOMContentLoaded", () => {
     const navMenu = document.getElementById("navMemu");
     if(navMenu === null){
@@ -91,38 +90,40 @@ document.addEventListener("DOMContentLoaded", () => {
     }
     navMenu.innerHTML = '';
     // 读取本地存储的token，判断是否登录（核心判断条件）
-    const token = localStorage.getItem('token');
-    const isAuthenticated = !!token; // 转为布尔值：有token则为true
-    if (isAuthenticated) {
-        // 已登录：渲染「个人界面」和「登出」
-        // 个人界面链接
-        const profileItem = document.createElement('li');
-        profileItem.className = 'nav-item';
-        profileItem.innerHTML = '<a class="nav-link" href="/account/protected">个人界面</a >';
-        navMenu.appendChild(profileItem);
+    checkLogin().then(res => {
+        const isAuthenticated = res.loggedIn;
+            if (isAuthenticated) {
+            // 已登录：渲染「个人界面」和「登出」
+            // 个人界面链接
+            const profileItem = document.createElement('li');
+            profileItem.className = 'nav-item';
+            profileItem.innerHTML = '<a class="nav-link" href="/account/protected">个人界面</a >';
+            navMenu.appendChild(profileItem);
 
-        // 登出链接
-        const logoutItem = document.createElement('li');
-        logoutItem.className = 'nav-item';
-        logoutItem.innerHTML = '<a class="nav-link" href="#" id="logoutBtn">登出</a >';
-        navMenu.appendChild(logoutItem);
+            // 登出链接
+            const logoutItem = document.createElement('li');
+            logoutItem.className = 'nav-item';
+            logoutItem.innerHTML = '<a class="nav-link" href="#" id="logoutBtn">登出</a >';
+            navMenu.appendChild(logoutItem);
 
-        // 绑定登出事件
-        document.getElementById('logoutBtn').addEventListener('click', handleLogout);
-    }
-    else {
-        // 未登录：渲染「登录」和「注册」
-        // 登录链接
-        const loginItem = document.createElement('li');
-        loginItem.className = 'nav-item';
-        loginItem.innerHTML = '<a class="nav-link" href="/account/login">登录</a >';
-        navMenu.appendChild(loginItem);
+            // 绑定登出事件
+            document.getElementById('logoutBtn').addEventListener('click', handleLogout);
+        }
+        else {
+            // 未登录：渲染「登录」和「注册」
+            // 登录链接
+            const loginItem = document.createElement('li');
+            loginItem.className = 'nav-item';
+            loginItem.innerHTML = '<a class="nav-link" href="/account/login">登录</a >';
+            navMenu.appendChild(loginItem);
 
-        // 注册链接
-        const registerItem = document.createElement('li');
-        registerItem.className = 'nav-item';
-        registerItem.innerHTML = '<a class="nav-link" href="/account/register">注册</a >';
-        navMenu.appendChild(registerItem);
-    }
-    console.log("ok");
+            // 注册链接
+            const registerItem = document.createElement('li');
+            registerItem.className = 'nav-item';
+            registerItem.innerHTML = '<a class="nav-link" href="/account/register">注册</a >';
+            navMenu.appendChild(registerItem);
+        }
+        console.log("base ok");
+    });
+
 });

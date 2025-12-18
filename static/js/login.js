@@ -5,7 +5,7 @@ document.getElementById('loginForm').addEventListener('submit', function (e) {
 
     const email = document.getElementById('email').value.trim();
     const password = document.getElementById('password').value;
-
+    const remember = document.getElementById('remember').value;
 
     const btn = document.getElementById('submitBtn');
     btn.disabled = true;

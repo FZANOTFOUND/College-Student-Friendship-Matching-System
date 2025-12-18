@@ -39,16 +39,7 @@ def register():
             password = form.password.data
             gender = form.gender.data
             age = form.age.data
-            remember = form_data.get("remember", False)
-            expires = (
-                timedelta(days=7) if remember
-                else timedelta(hours=2)
-            )
 
-            access_token = create_access_token(
-                identity=username,
-                expires_delta=expires
-            )
             hashed_password = generate_password_hash(password)
             user = User(email=email, username=username, password_hash=hashed_password, gender=gender, age=age)
             db.session.add(user)
@@ -99,6 +90,7 @@ def login():
         if form.validate():
             email = form.email.data
             password = form.password.data
+
             user = User.query.filter(User.email == email).first()
             if not user:
                 return jsonify({
@@ -113,7 +105,15 @@ def login():
                 }), 400
 
             if check_password_hash(user.password_hash, password):
-                access_token = create_access_token(identity=str(user.user_id))
+                remember = form_data.get("remember", False)
+                expires = (
+                    timedelta(days=7) if remember
+                    else timedelta(hours=2)
+                )
+                access_token = create_access_token(
+                    identity=str(user.user_id),
+                    expires_delta=expires
+                )
                 resp = jsonify({
                     "code": 200,
                     "message": "登录成功",
@@ -185,9 +185,22 @@ def get_email_captcha():
 
 
 @api_account_bp.route('/logout', methods=['POST'])
-@jwt_required()
 def logout():
     """用户登出"""
     resp = jsonify({'code': 200, 'message': '登出成功'})
     unset_jwt_cookies(resp)
     return resp
+
+
+@api_account_bp.route('/profile', methods=['GET'])
+@my_jwt_required(limit=0, api=True)
+def get_profile():
+    """获取当前用户个人资料"""
+    try:
+        user_id = get_jwt_identity()
+        user = User.query.get(user_id)
+        if not user:
+            return jsonify({'code': 404, 'message': '用户不存在'}), 404
+        return jsonify({'code': 200, 'data': user.to_dict()})
+    except Exception as e:
+        return jsonify({'code': 500, 'message': 'Inner Error'}), 500

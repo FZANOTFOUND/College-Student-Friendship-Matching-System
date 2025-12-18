@@ -16,6 +16,7 @@ from extensions import mail, db
 from models import EmailVerification, User
 from decorators import *
 
+
 @account_bp.route('/register', methods=['GET', 'POST'])
 def register():
     return render_template('account/register.html')
@@ -27,6 +28,6 @@ def login():
 
 
 @account_bp.route('/protected')
-@jwt_required_or_redirect()
+@my_jwt_required(limit=0, api=False)
 def protected():
     return render_template('account/protected.html')

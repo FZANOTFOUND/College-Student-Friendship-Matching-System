@@ -9,7 +9,7 @@ from extensions import db, mail, jwt, bcrypt, cors
 from flask_cors import CORS
 from flask_migrate import Migrate
 from datetime import timedelta
-
+from admin import api_admin_bp
 # load env
 load_dotenv()
 
@@ -40,7 +40,7 @@ Migrate(app, db)
 app.register_blueprint(account_bp, url_prefix='/account')
 app.register_blueprint(api_account_bp, url_prefix='/api/account')
 app.register_blueprint(errors_bp)
-
+app.register_blueprint(api_admin_bp, url_prefix='/api/admin')
 
 @app.route('/')
 def index():
