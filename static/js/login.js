@@ -22,7 +22,7 @@ document.getElementById('loginForm').addEventListener('submit', function (e) {
         .then(r => r.json())
         .then(data => {
             console.log(data);
-            if(data.code === 200){
+            if(data.code === 200 || data.code === 201 ){
                 clearContainer();
                 //setLocalStorage(data.data);
                 window.location.href = '/';

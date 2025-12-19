@@ -2,7 +2,6 @@
 body {
     margin: 0;
     padding: 0;
-    height: 100vh;
     background: linear-gradient(135deg, #e8eef7, #ffffff);
     font-family: "Segoe UI", Arial, sans-serif;
     display: flex;

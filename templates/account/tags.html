@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block title %}用户标签{% endblock %}
+
+
+
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-md-10">
+    <div class="card mb-3">
+      <div class="card-body">
+        <h4 class="card-title">个人标签设置</h4>
+        <p class="card-text">选择你的标签以便获得更准确的推荐。</p>
+
+        <!-- 标签容器 -->
+        <div id="tags-container">
+          <!-- JS 会在这里按 category 渲染复选框 -->
+          <div class="text-muted">正在加载标签……</div>
+        </div>
+
+      </div>
+    </div>
+
+
+  </div>
+</div>
+{% endblock %}
+
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/tags.js') }}"></script>
+{% endblock %}

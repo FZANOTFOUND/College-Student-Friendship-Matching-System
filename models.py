@@ -67,3 +67,58 @@ class MatchRecord(db.Model):
     user1 = db.relationship('User', foreign_keys=[user1_id], backref='matches_as_user1')
     user2 = db.relationship('User', foreign_keys=[user2_id], backref='matches_as_user2')
 
+
+class Tag(db.Model):
+    __tablename__ = "tags"
+
+    tag_id = db.Column(db.Integer, primary_key=True)
+    tag_name = db.Column(db.String(50), nullable=False, unique=True)
+    category = db.Column(db.String(50), nullable=False)
+    description = db.Column(db.Text)
+    created_at = db.Column(db.DateTime, server_default=db.func.current_timestamp())
+
+    # # 关系（可选）
+    # users = db.relationship(
+    #     "User",
+    #     secondary="user_tags",
+    #     back_populates="tags"
+    # )
+
+    def __repr__(self):
+        return f"<Tag(id={self.tag_id}, name={self.tag_name})>"
+
+    def to_dict(self):
+        return {
+            "tag_id": self.tag_id,
+            "tag_name": self.tag_name,
+            "category": self.category,
+            "description": self.description,
+            "created_at": self.created_at
+        }
+
+
+class UserTag(db.Model):
+    __tablename__ = "user_tags"
+
+    user_id = db.Column(
+        db.Integer,
+        db.ForeignKey("users.user_id", ondelete="CASCADE"),
+        primary_key=True
+    )
+    tag_id = db.Column(
+        db.Integer,
+        db.ForeignKey("tags.tag_id", ondelete="CASCADE"),
+        primary_key=True
+    )
+    created_at = db.Column(db.DateTime, server_default=db.func.current_timestamp())
+    #
+    # # 关系（可选）
+    # user = db.relationship("User", back_populates="user_tags")
+    # tag = db.relationship("Tag")
+
+    def to_dict(self):
+        return {
+            "user_id": self.user_id,
+            "tag_id": self.tag_id,
+            "created_at": self.created_at
+        }

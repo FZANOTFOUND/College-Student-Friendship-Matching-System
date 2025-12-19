@@ -13,7 +13,13 @@
     </div>
   </div>
 {% endblock %}
-
+{% block css %}
+  <style>
+  body{
+      height: 100vh;
+  }
+  </style>
+{% endblock %}
 {% block scripts %}
   <script src="{{ url_for('static', filename='js/index.js') }}"></script>
 {% endblock %}

@@ -18,6 +18,14 @@ function logout_client(){
     clearContainer();
     clearLocalStorage();
 }
+
+function getCookie(name) {
+  return document.cookie
+    .split('; ')
+    .find(row => row.startsWith(name + '='))
+    ?.split('=')[1];
+}
+
 function handleLogout() {
 
     fetch("/api/account/logout",{
@@ -26,6 +34,7 @@ function handleLogout() {
         headers: {
             'X-Requested-With': 'XMLHttpRequest',
             'Accept': 'application/json',
+            'X-CSRF-TOKEN': getCookie('csrf_access_token')
         }})
         .finally(() => {
             logout_client();
@@ -82,6 +91,19 @@ async function checkLogin() {
     }
 }
 
+async function apiFetch(path, options) {
+    options = options || {};
+    options.headers = options.headers || {};
+    options.headers["X-CSRF-TOKEN"] = getCookie("csrf_access_token");
+    options["credentials"] =  "include";
+    const res = await fetch(path, options);
+    const json = await res.json();
+    console.log(json);
+    if (json.code !== 200 && json.code !== 201) {
+      throw json;
+    }
+    return json;
+}
 document.addEventListener("DOMContentLoaded", () => {
     const navMenu = document.getElementById("navMemu");
     if(navMenu === null){

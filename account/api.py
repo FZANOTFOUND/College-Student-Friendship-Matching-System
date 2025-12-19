@@ -47,7 +47,7 @@ def register():
             db.session.close()
 
             return jsonify({
-                "code": 200,
+                "code": 201,
                 "message": "注册成功",
                 "errors": {
 
@@ -55,7 +55,7 @@ def register():
                 "data": {
 
                 }
-            }), 200
+            }), 201
         else:
             return jsonify({
                 "code": 400,
@@ -185,6 +185,7 @@ def get_email_captcha():
 
 
 @api_account_bp.route('/logout', methods=['POST'])
+@my_jwt_required(limit=0, api=True)
 def logout():
     """用户登出"""
     resp = jsonify({'code': 200, 'message': '登出成功'})
