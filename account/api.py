@@ -22,7 +22,7 @@ from extensions import mail, db
 from models import EmailVerification, User
 from decorators import *
 import traceback
-import datetime
+
 
 
 @api_account_bp.route('/register', methods=['POST'])

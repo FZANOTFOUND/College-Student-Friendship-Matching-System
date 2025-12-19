@@ -7,7 +7,7 @@ document.addEventListener('DOMContentLoaded', function () {
             .then(res => res.json())
             .then(data => {
                 if (data.code === 200) {
-
+                    insertContainer("info", "验证码获取成功");
                 } else {
                     showErrors(data.errors);
                 }
