@@ -57,7 +57,8 @@ def my_jwt_required(limit: int = 0, api: bool = False):
                         }
                     }), 403
                 else:
-                    return jsonify(render_template("error.html", code=403)), 403
+                    return render_template("error.html", code=403, details="You are not allowed to view the request "
+                                                                           "page"), 403
 
             # 3. 放行
             return fn(*args, **kwargs)

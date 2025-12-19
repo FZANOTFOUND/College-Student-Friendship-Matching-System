@@ -27,8 +27,15 @@ document.addEventListener("DOMContentLoaded", () => {
         if (isAuthenticated) {
             const username = res.data.username || '';
             const email = res.data.email || '';
-            cardTitle.textContent = `欢迎回来, ${username || '用户'} 👋`;
+            const role = res.data.role || 0;
+            if(role){
+                cardTitle.textContent = `欢迎回来, 管理员 ${username || '用户'} 👋`;
+            }
+            else{
+                cardTitle.textContent = `欢迎回来, 用户 ${username || '用户'} 👋`;
+            }
             cardText.innerHTML = `您已使用 <strong>${email || ''}</strong> 登录.`; // 保留加粗样式
+
 
             a1.href = '/account/protected';
 
@@ -45,7 +52,13 @@ document.addEventListener("DOMContentLoaded", () => {
         cardMenu.appendChild(cardTitle);
         cardMenu.appendChild(cardText);
         cardMenu.appendChild(a1);
-
+        if (isAuthenticated && (res.data.role || 0)) {
+            const a0 = document.createElement('a');
+            a0.className = 'btn btn-primary me-2';
+            a0.href = '/admin/info';
+            a0.textContent = '管理员界面';
+            cardMenu.appendChild(a0);
+        }
         if(isAuthenticated) {
             const a2 = document.createElement('button');
             a2.className = 'btn btn-outline-secondary';

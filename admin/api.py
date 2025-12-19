@@ -55,8 +55,8 @@ def statistics():
         default_end = datetime.now()
 
         # 解析参数
-        s = parse_datetime(request.args.get('s'), default_start)
-        e = parse_datetime(request.args.get('e'), default_end)
+        s = parse_datetime(request.args.get('start_time'), default_start)
+        e = parse_datetime(request.args.get('end_time'), default_end)
 
         # 新建用户
         new_users = (
@@ -77,6 +77,7 @@ def statistics():
         )
 
         return jsonify({
+            "code": 200,
             "start_time": to_utc_z(s),
             "end_time": to_utc_z(e),
             "new_users": [
@@ -100,3 +101,12 @@ def statistics():
             "errors": {},
             "data": {}
         }), 500
+
+
+@api_admin_bp.route('/me', methods=['GET'])
+@my_jwt_required(limit=1, api=True)
+def me():
+    return jsonify({
+        "code": 200,
+        "message": "ok",
+    }), 200

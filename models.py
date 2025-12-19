@@ -39,7 +39,8 @@ class User(db.Model):
             'avatar_url': self.avatar_url,
             'status': self.status,
             'created_at': self.created_at.isoformat() if self.created_at else None,
-            'last_login_at': self.last_login_at.isoformat() if self.last_login_at else None
+            'last_login_at': self.last_login_at.isoformat() if self.last_login_at else None,
+            "role": self.role,
         }
 
 

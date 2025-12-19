@@ -9,7 +9,7 @@ from extensions import db, mail, jwt, bcrypt, cors
 from flask_cors import CORS
 from flask_migrate import Migrate
 from datetime import timedelta
-from admin import api_admin_bp
+from admin import api_admin_bp, admin_bp
 from tags import api_tags_bp, tags_bp
 from models import *
 
@@ -44,9 +44,9 @@ app.register_blueprint(account_bp, url_prefix='/account')
 app.register_blueprint(api_account_bp, url_prefix='/api/account')
 app.register_blueprint(errors_bp)
 app.register_blueprint(api_admin_bp, url_prefix='/api/admin')
+app.register_blueprint(admin_bp, url_prefix='/admin')
 app.register_blueprint(api_tags_bp, url_prefix='/api/tags')
 app.register_blueprint(tags_bp, url_prefix='/tags')
-
 
 @app.route('/')
 def index():

@@ -132,7 +132,7 @@ def recommend_users():
         # 3. 计算相似度
         scores = []
         for user_id, tags in user_tags_map.items():
-            if user_id == current_user_id:
+            if str(user_id) == str(current_user_id):
                 continue
 
             score = jaccard_similarity(my_tags, tags)

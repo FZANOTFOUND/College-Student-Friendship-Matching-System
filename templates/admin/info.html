@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+{% block title %}用户统计{% endblock %}
+
+{% block content %}
+<div class="mt-5">
+
+  <!-- 时间范围选择 -->
+  <div class="mb-3">
+    <label class="form-label">时间范围</label>
+    <select class="form-select" id="timeRange">
+      <option value="all">所有</option>
+      <option value="1y">一年内</option>
+      <option value="6m">6 个月内</option>
+      <option value="3m">3 个月内</option>
+      <option value="1m">1 个月内</option>
+      <option value="2w">2 周内</option>
+      <option value="1w">1 周内</option>
+      <option value="today" selected>今日</option>
+    </select>
+  </div>
+
+  <!-- 统计卡片 -->
+  <div class="row mb-4">
+    <div class="col-md-6">
+      <div class="card shadow-sm text-center">
+        <div class="card-body">
+          <h6>新注册用户</h6>
+          <p class="display-6" id="newCount">-</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-6">
+      <div class="card shadow-sm text-center">
+        <div class="card-body">
+          <h6>登录用户</h6>
+          <p class="display-6" id="loginCount">-</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 用户列表 -->
+  <div class="row">
+    <div class="col-md-6">
+      <h5>新注册用户列表</h5>
+      <ul class="list-group" id="newUserList"></ul>
+    </div>
+
+    <div class="col-md-6">
+      <h5>登录用户列表</h5>
+      <ul class="list-group" id="loginUserList"></ul>
+    </div>
+  </div>
+
+</div>
+{% endblock %}
+
+{% block scripts %}
+    <script src = {{ url_for('static', filename='js/adminInfo.js') }}></script>
+{% endblock %}
+
+
+
+{% block css %}
+  <style>
+  body{
+      height: 60vh;
+  }
+  </style>
+{% endblock %}
