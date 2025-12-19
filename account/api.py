@@ -113,7 +113,7 @@ def login():
                     timedelta(days=7) if remember
                     else timedelta(hours=2)
                 )
-                user.last_login_at = datetime.datetime.now()
+                user.last_login_at = datetime.now()
                 db.session.commit()
                 access_token = create_access_token(
                     identity=str(user.user_id),
