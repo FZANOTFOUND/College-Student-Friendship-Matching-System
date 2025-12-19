@@ -3,7 +3,7 @@ import time
 from flask import render_template, redirect, url_for, request, flash
 from . import account_bp, api_account_bp
 from models import User
-from .forms import RegisterForm, LoginForm
+from .forms import RegisterForm, LoginForm, EmailCaptchaRequestForm
 import string
 import random
 import re
@@ -21,7 +21,7 @@ from werkzeug.security import generate_password_hash, check_password_hash  # 对
 from extensions import mail, db
 from models import EmailVerification, User
 from decorators import *
-
+import traceback
 
 @api_account_bp.route('/register', methods=['POST'])
 def register():
@@ -66,6 +66,7 @@ def register():
                 }
             }), 400
     except Exception as e:
+        traceback.print_exc()
         return jsonify({
             "code": 500,
             "message": "服务器错误",
@@ -169,19 +170,42 @@ def login():
 def get_email_captcha():
     """获取邮箱验证码"""
     email = request.args.get('email')
-    EmailVerification.query.filter_by(email=email).delete()
-    source = string.digits * 4
-    code = random.sample(source, 4)
-    code = ''.join(code)
-    t = time.localtime(time.time())
-    message = Message(subject='流萤快报', recipients=[email],
-                      html=render_template("email.html", code=code, hour=t.tm_hour))
-    mail.send(message)
-    email_captcha = EmailVerification(email=email, code=code)
-    db.session.add(email_captcha)
-    db.session.commit()
-    db.session.close()
-    return jsonify({'code': 200, 'message': '发送成功'})
+    if not email:
+        return jsonify({
+            'code': 400,
+            'message': '邮箱参数不能为空'
+        }), 400
+
+    try:
+        form = EmailCaptchaRequestForm(MultiDict({'email': email}))
+        if not form.validate():
+            return jsonify({
+                'code': 400,
+                'message': '邮箱格式错误',
+                'errors': form.errors
+            }), 400
+
+        EmailVerification.query.filter_by(email=email).delete()
+        source = string.digits * 4
+        code = random.sample(source, 4)
+        code = ''.join(code)
+        t = time.localtime(time.time())
+        expire_time = datetime.now() + timedelta(minutes=10)
+        message = Message(subject='流萤快报', recipients=[email],
+                          html=render_template("email.html", code=code, hour=t.tm_hour))
+        mail.send(message)
+        email_captcha = EmailVerification(email=email, code=code, expire_time = expire_time)
+        db.session.add(email_captcha)
+        db.session.commit()
+        db.session.close()
+        return jsonify({'code': 200, 'message': '发送成功'})
+    except Exception as e:
+        db.session.rollback()
+        current_app.logger.error(f"验证码发送失败：{str(e)}")
+        return jsonify({
+            'code': 500,
+            'message': '验证码发送失败，请稍后重试'
+        }), 500
 
 
 @api_account_bp.route('/logout', methods=['POST'])

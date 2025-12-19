@@ -17,9 +17,10 @@ class User(db.Model):
     bio = db.Column(db.Text)
     avatar_url = db.Column(db.String(255))
     status = db.Column(db.String(20), default='active')
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default =datetime.now())
     last_login_at = db.Column(db.DateTime)
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default = datetime.now(), onupdate = datetime.now())
+    role = db.Column(db.Integer, default=0)
 
     def set_password(self, password):
         self.password_hash = bcrypt.generate_password_hash(password).decode('utf-8')
@@ -49,7 +50,7 @@ class EmailVerification(db.Model):
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     email = db.Column(db.String(120), nullable=False)
     code = db.Column(db.String(4), nullable=False)
-    expire_time = db.Column(db.DateTime, default=lambda: datetime.now() + timedelta(minutes=10))
+    expire_time = db.Column(db.DateTime, default = datetime.now())
 
 
 # 在现有models.py中添加匹配记录模型

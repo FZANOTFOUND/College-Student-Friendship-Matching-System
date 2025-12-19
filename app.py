@@ -117,9 +117,10 @@ def init_tags(db):
             ))
     db.session.commit()
 
-# @app.route('/init-db')
-# def init_db():
-#     init_tags(db)
+@app.route('/init-db')
+def init_db():
+    init_tags(db)
+    return "ok"
 
 if __name__ == '__main__':
     app.run(host=config.FLASK_RUN_HOST, port=config.FLASK_RUN_PORT, debug=config.FLASK_DEBUG)
