@@ -1,5 +1,6 @@
 import os
 from datetime import timedelta
+from urllib.parse import quote_plus
 
 # 文件上传相关配置
 UPLOAD_FOLDER = os.getenv('UPLOAD_FOLDER')
@@ -12,7 +13,13 @@ FLASK_DEBUG = 1
 
 # 数据库设置
 SECRET_KEY = '534@fsdft54323'
-SQLALCHEMY_DATABASE_URI = 'opengauss+psycopg2://gaussdb:%40Xf5133023@127.0.0.1:5432/postgres'
+DB_USER = "gaussdb"
+DB_PASSWORD_RAW = "@Xf5133023"
+DB_PASSWORD = quote_plus(DB_PASSWORD_RAW)
+DB_HOST = "127.0.0.1"
+DB_NAME = "postgres"
+DB_PORT = 5432
+SQLALCHEMY_DATABASE_URI = f'opengauss+psycopg2://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}'
 
 MAIL_SERVER = "smtp.qq.com"
 MAIL_USE_SSL = True

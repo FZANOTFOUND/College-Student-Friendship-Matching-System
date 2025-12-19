@@ -6,3 +6,6 @@ __pycache__/
 
 # 忽略.idea
 .idea/
+
+# 忽略 migrations
+migrations/

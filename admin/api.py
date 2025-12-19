@@ -22,6 +22,25 @@ from models import EmailVerification, User
 from decorators import *
 from sqlalchemy.orm import load_only
 from constant import get_permission
+from sqlalchemy import func
+from datetime import datetime, timezone
+import traceback
+
+
+def parse_datetime(param, default):
+    if not param:
+        return default
+    try:
+        # 兼容 Z 结尾
+        return datetime.fromisoformat(param.replace('Z', '+00:00'))
+    except ValueError:
+        return default
+
+
+def to_utc_z(dt):
+    if not dt:
+        return None
+    return dt.astimezone(timezone.utc).strftime('%Y-%m-%dT%H:%M:%SZ')
 
 
 @api_admin_bp.route('/query/time_period', methods=['GET'])
@@ -32,33 +51,49 @@ def statistics():
     :return:
     """
     try:
-        start_time = request.args.get("start_time", 0)
-        end_time = request.args.get("end_time", int(time.time()))
-        login_users = (User.query
-                       .options(load_only(User.user_id, User.username, User.age, User.gender, User.last_login_at,
-                                          User.created_at))
-                       .filter((User.last_login_at >= start_time) & (User.last_login_at <= end_time) &
-                               User.role == "user")
-                       .order_by(User.last_login_at))
-        create_users = (User.query
-                        .filter((User.last_login_at >= start_time) & (User.last_login_at <= end_time) &
-                                (User.created_at >= start_time) & (User.created_at <= end_time) & User.role == "user")
-                        .order_by(User.last_login_at))
+        default_start = datetime(1, 1, 1, tzinfo=timezone.utc)
+        default_end = datetime.now()
 
-        res = {
-            "code": 200,
-            "message": "Ok query finish",
-            "errors": {},
-            "data": {
-                "user": {
+        # 解析参数
+        s = parse_datetime(request.args.get('s'), default_start)
+        e = parse_datetime(request.args.get('e'), default_end)
 
-                }
-            }
-        }
-        res["data"]["total_user"] = len(login_users)
-        res["data"]["new_user"] = len(login_users)
-        return res, 200
+        # 新建用户
+        new_users = (
+            User.query
+            .filter(User.created_at >= s, User.created_at <= e)
+            .all()
+        )
+
+        # 登录过的用户
+        login_users = (
+            User.query
+            .filter(
+                User.last_login_at.isnot(None),
+                User.last_login_at >= s,
+                User.last_login_at <= e
+            )
+            .all()
+        )
+
+        return jsonify({
+            "start_time": to_utc_z(s),
+            "end_time": to_utc_z(e),
+            "new_users": [
+                {
+                    "user_id": u.user_id,
+                    "username": u.username
+                } for u in new_users
+            ],
+            "login_users": [
+                {
+                    "user_id": u.user_id,
+                    "username": u.username
+                } for u in login_users
+            ]
+        })
     except Exception as e:
+        traceback.print_exc()
         return jsonify({
             "code": 500,
             "message": "Inner Error :(",

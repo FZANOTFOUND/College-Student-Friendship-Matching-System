@@ -26,7 +26,7 @@ def my_jwt_required(limit: int = 0, api: bool = False):
                 if api:
                     return jsonify({
                         "code": 401,
-                        "message": "Missing Authorization Header",
+                        "message": "Missing Authorization Header/Token expired",
                         "errors": {
 
                         },

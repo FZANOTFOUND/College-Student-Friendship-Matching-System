@@ -62,22 +62,46 @@ def handle_missing_token(error_msg):
     }), 401
 
 
-# # 场景2：Token已过期
-# @jwt.expired_token_loader
-# def handle_expired_token(jwt_header, jwt_payload):
-#     title, message = get_message_for_code(401)
-#     return render_template("error.html", code=401, title=title, message=message), 401
-#
-#
-# # 场景3：Token无效（篡改/格式错误）
-# @jwt.invalid_token_loader
-# def handle_invalid_token(error_msg):
-#     title, message = get_message_for_code(401)
-#     return render_template("error.html", code=401, title=title, message=message), 401
-#
-#
-# # 场景4：Token被吊销（可选，如登出后Token拉黑）
-# @jwt.revoked_token_loader
-# def handle_revoked_token(jwt_header, jwt_payload):
-#     title, message = get_message_for_code(401)
-#     return render_template("error.html", code=401, title=title, message=message), 401
+# 场景2：Token已过期
+@jwt.expired_token_loader
+def handle_expired_token(jwt_header, jwt_payload):
+    return jsonify({
+        "code": 401,
+        "message": "Expired token loader",
+        "errors": {
+
+        },
+        "data": {
+
+        }
+    }), 401
+
+
+# 场景3：Token无效（篡改/格式错误）
+@jwt.invalid_token_loader
+def handle_invalid_token(error_msg):
+    return jsonify({
+        "code": 401,
+        "message": "Invalid token loader",
+        "errors": {
+
+        },
+        "data": {
+
+        }
+    }), 401
+
+
+# 场景4：Token被吊销（可选，如登出后Token拉黑）
+@jwt.revoked_token_loader
+def handle_revoked_token(jwt_header, jwt_payload):
+    return jsonify({
+        "code": 401,
+        "message": "Revoked token loader",
+        "errors": {
+
+        },
+        "data": {
+
+        }
+    }), 401

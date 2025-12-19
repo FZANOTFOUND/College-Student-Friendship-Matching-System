@@ -22,6 +22,8 @@ from extensions import mail, db
 from models import EmailVerification, User
 from decorators import *
 import traceback
+import datetime
+
 
 @api_account_bp.route('/register', methods=['POST'])
 def register():
@@ -111,9 +113,14 @@ def login():
                     timedelta(days=7) if remember
                     else timedelta(hours=2)
                 )
+                user.last_login_at = datetime.datetime.now()
+                db.session.commit()
                 access_token = create_access_token(
                     identity=str(user.user_id),
-                    expires_delta=expires
+                    expires_delta=expires,
+                    additional_claims={
+                        "role": user.role if user.role is not None else 0
+                    }
                 )
                 resp = jsonify({
                     "code": 200,
@@ -127,8 +134,8 @@ def login():
                         "avatar_url": user.avatar_url,
                         "gender": user.gender,
                         "age": user.age,
-                        "bio": user.bio,
-                        "token": access_token
+                        "bio": user.bio
+                        # "token": access_token
                     }
                 })
                 set_access_cookies(resp, access_token)

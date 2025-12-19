@@ -1,7 +1,7 @@
 from extensions import db
 from flask_login import UserMixin
-from werkzeug.security import generate_password_hash,check_password_hash
-from datetime import datetime,timedelta
+from werkzeug.security import generate_password_hash, check_password_hash
+from datetime import datetime, timedelta
 from extensions import db, bcrypt
 
 
@@ -17,9 +17,9 @@ class User(db.Model):
     bio = db.Column(db.Text)
     avatar_url = db.Column(db.String(255))
     status = db.Column(db.String(20), default='active')
-    created_at = db.Column(db.DateTime, default =datetime.now())
+    created_at = db.Column(db.DateTime, default=datetime.now())
     last_login_at = db.Column(db.DateTime)
-    updated_at = db.Column(db.DateTime, default = datetime.now(), onupdate = datetime.now())
+    updated_at = db.Column(db.DateTime, default=datetime.now(), onupdate=datetime.now())
     role = db.Column(db.Integer, default=0)
 
     def set_password(self, password):
@@ -50,7 +50,7 @@ class EmailVerification(db.Model):
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     email = db.Column(db.String(120), nullable=False)
     code = db.Column(db.String(4), nullable=False)
-    expire_time = db.Column(db.DateTime, default = datetime.now())
+    expire_time = db.Column(db.DateTime, default=datetime.now())
 
 
 # 在现有models.py中添加匹配记录模型
@@ -112,6 +112,7 @@ class UserTag(db.Model):
         primary_key=True
     )
     created_at = db.Column(db.DateTime, server_default=db.func.current_timestamp())
+
     #
     # # 关系（可选）
     # user = db.relationship("User", back_populates="user_tags")
