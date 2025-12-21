@@ -40,7 +40,7 @@ def parse_datetime(param, default):
 def to_utc_z(dt):
     if not dt:
         return None
-    return dt.astimezone(timezone.utc).strftime('%Y-%m-%dT%H:%M:%SZ')
+    return dt.strftime('%Y-%m-%dT%H:%M:%SZ')
 
 
 @api_admin_bp.route('/query/time_period', methods=['GET'])

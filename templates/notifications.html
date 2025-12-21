@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+
+{% block title %}我的通知{% endblock %}
+
+{% block content %}
+<div class="mt-5 pt-4">
+
+  <!-- 标题 + 一键已读 -->
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <h3 class="mb-0">📬 我的通知</h3>
+    <button id="mark-all-read" class="btn btn-sm btn-outline-success">
+      ✔ 一键已读
+    </button>
+  </div>
+
+  <!-- 筛选按钮 -->
+  <div class="btn-group mb-3" role="group">
+    <button id="filter-unread" class="btn btn-outline-primary active">
+      未读
+    </button>
+    <button id="filter-all" class="btn btn-outline-primary">
+      全部
+    </button>
+    <button id="filter-read" class="btn btn-outline-primary">
+      已读
+    </button>
+  </div>
+
+  <!-- 通知列表 -->
+  <div id="notification-list" class="list-group mb-4">
+    <!-- JS 动态插入 -->
+  </div>
+
+  <!-- 分页 -->
+  <nav>
+    <ul class="pagination justify-content-center" id="pagination"></ul>
+  </nav>
+
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/notifications.js') }}"></script>
+{% endblock %}

@@ -77,7 +77,7 @@ class Tag(db.Model):
     tag_name = db.Column(db.String(50), nullable=False, unique=True)
     category = db.Column(db.String(50), nullable=False)
     description = db.Column(db.Text)
-    created_at = db.Column(db.DateTime, server_default=db.func.current_timestamp())
+    created_at = db.Column(db.DateTime, default=datetime.now)
 
     # # 关系（可选）
     # users = db.relationship(
@@ -112,7 +112,7 @@ class UserTag(db.Model):
         db.ForeignKey("tags.tag_id", ondelete="CASCADE"),
         primary_key=True
     )
-    created_at = db.Column(db.DateTime, server_default=db.func.current_timestamp())
+    created_at = db.Column(db.DateTime, default=datetime.now)
 
     #
     # # 关系（可选）
@@ -125,3 +125,56 @@ class UserTag(db.Model):
             "tag_id": self.tag_id,
             "created_at": self.created_at
         }
+
+class Conversation(db.Model):
+    __tablename__ = 'conversations'
+
+    conv_id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    created_at = db.Column(db.DateTime, default=datetime.now)
+    updated_at = db.Column(db.DateTime, default=datetime.now, onupdate=datetime.now)
+    is_active = db.Column(db.Boolean, default=True)
+
+    # 关联消息
+    messages = db.relationship('Message', backref='conversation', lazy=True, cascade="all, delete-orphan")
+
+
+class ConversationParticipant(db.Model):
+    __tablename__ = 'conversation_participants'
+
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    conv_id = db.Column(db.Integer, db.ForeignKey('conversations.conv_id', ondelete='CASCADE'), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.user_id', ondelete='CASCADE'), nullable=False)
+    joined_at = db.Column(db.DateTime, default=datetime.now)
+    last_read_at = db.Column(db.DateTime)
+
+    # 联合唯一约束
+    __table_args__ = (db.UniqueConstraint('conv_id', 'user_id', name='unique_conv_user'),)
+
+
+class Message(db.Model):
+    __tablename__ = 'messages'
+
+    msg_id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    conv_id = db.Column(db.Integer, db.ForeignKey('conversations.conv_id', ondelete='CASCADE'), nullable=False)
+    sender_id = db.Column(db.Integer, db.ForeignKey('users.user_id'), nullable=False)
+    content = db.Column(db.Text, nullable=False)
+    sent_at = db.Column(db.DateTime, default=datetime.now)
+    is_read = db.Column(db.Boolean, default=False)
+
+    # 关联发送者
+    sender = db.relationship('User', backref='sent_messages')
+
+
+class Notification(db.Model):
+    __tablename__ = 'notifications'
+
+    notify_id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    recipient_id = db.Column(db.Integer, db.ForeignKey('users.user_id', ondelete='CASCADE'), nullable=False)
+    type = db.Column(db.String(50), nullable=False)  # 'message', 'match', etc.
+    content = db.Column(db.Text, nullable=False)
+    related_id = db.Column(db.Integer)  # 关联的资源ID（如对话ID）
+    created_at = db.Column(db.DateTime, default=datetime.now)
+    is_read = db.Column(db.Boolean, default=False)
+
+    # 关联接收者
+    recipient = db.relationship('User', backref='notifications')

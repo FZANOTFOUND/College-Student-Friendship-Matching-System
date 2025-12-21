@@ -104,6 +104,29 @@ async function apiFetch(path, options) {
     }
     return json;
 }
+function loadUnreadNotificationCount() {
+    const badge = document.getElementById('notification-badge');
+    if (!badge) return;
+
+    fetch("/api/notification/unread/count", {
+        method: "GET",
+        credentials: "include"
+    })
+        .then(r => r.json())
+        .then(data => {
+            if (data.code !== 200 && data.code !== 201) return;
+
+            const count = data.data.count;
+            if (count > 0) {
+                badge.textContent = count > 99 ? "99+" : count;
+                badge.style.display = "inline-block";
+            } else {
+                badge.style.display = "none";
+            }
+        })
+        .catch(() => {});
+}
+
 document.addEventListener("DOMContentLoaded", () => {
     const navMenu = document.getElementById("navMemu");
     if(navMenu === null){
@@ -111,11 +134,28 @@ document.addEventListener("DOMContentLoaded", () => {
         return;
     }
     navMenu.innerHTML = '';
-    // 读取本地存储的token，判断是否登录（核心判断条件）
     checkLogin().then(res => {
         const isAuthenticated = res.loggedIn;
             if (isAuthenticated) {
-            // 已登录：渲染「个人界面」和「登出」
+            // 通知界面链接
+            const notifications = document.createElement('li');
+            notifications.className = 'nav-item';
+            notifications.innerHTML = notifications.innerHTML = `
+                <a class="nav-link position-relative" href="/notifications/">
+                    📢
+                    <span id="notification-badge"
+                          class="position-absolute top-2 start-100 translate-middle badge rounded-pill bg-danger"
+                          style="
+                            display:none;
+                            font-size: 0.65rem;
+                            padding: 0.2em 0.4em;
+                            min-width: 1.2em;
+                          "">
+                    </span>
+                </a>
+            `;
+            navMenu.appendChild(notifications);
+
             // 个人界面链接
             const profileItem = document.createElement('li');
             profileItem.className = 'nav-item';
@@ -130,6 +170,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
             // 绑定登出事件
             document.getElementById('logoutBtn').addEventListener('click', handleLogout);
+
+            loadUnreadNotificationCount();
         }
         else {
             // 未登录：渲染「登录」和「注册」
