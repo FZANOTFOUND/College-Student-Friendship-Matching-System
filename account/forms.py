@@ -1,7 +1,7 @@
 from datetime import datetime
 from flask_wtf import FlaskForm
-from wtforms import Form, StringField, validators, IntegerField
-from wtforms.validators import Email, Length, EqualTo, Regexp, ValidationError
+from wtforms import Form, StringField, validators, IntegerField,TextAreaField
+from wtforms.validators import Email, Length, EqualTo, Regexp, ValidationError, NumberRange
 
 from models import User,EmailVerification
 from extensions import db
@@ -62,3 +62,10 @@ class EmailCaptchaRequestForm(Form):
         user = User.query.filter_by(email=email).first()
         if user:
             raise ValidationError('邮箱已被注册')
+
+class ProfileEditForm(Form):
+    username = StringField(validators=[Length(min=2, max=20, message='用户名长度错误')])
+    gender = StringField(validators=[Regexp(r'^(男|女|其他)$', message='性别格式错误')])
+    age = IntegerField(validators=[NumberRange(min=18, max=100, message='年龄格式错误')])
+    bio = TextAreaField(validators=[Length(max=100, message='个人简介不能超过100字')])
+    avatar_url = StringField(validators=[Length(max=255, message='头像URL过长')])

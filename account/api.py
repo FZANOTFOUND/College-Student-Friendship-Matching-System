@@ -3,7 +3,7 @@ import time
 from flask import render_template, redirect, url_for, request, flash
 from . import account_bp, api_account_bp
 from models import User
-from .forms import RegisterForm, LoginForm, EmailCaptchaRequestForm
+from .forms import RegisterForm, LoginForm, EmailCaptchaRequestForm, ProfileEditForm
 import string
 import random
 import re
@@ -236,3 +236,59 @@ def get_profile():
         return jsonify({'code': 200, 'data': user.to_dict()})
     except Exception as e:
         return jsonify({'code': 500, 'message': 'Inner Error'}), 500
+
+@api_account_bp.route('/profile/change', methods=['PUT'])
+@my_jwt_required(limit=0, api=True)
+def update_profile():
+    """更新个人资料"""
+    try:
+        user_id = get_jwt_identity()
+        user = User.query.get(user_id)
+
+        if not user:
+            return jsonify({'code': 404, 'message': '用户不存在'}), 404
+
+        if request.is_json:
+            json_data = request.get_json()
+            form_data = MultiDict(json_data)
+        else:
+            form_data = request.form
+
+        form = ProfileEditForm(form_data)
+        if form.validate():
+            # 更新字段（只更新提供的字段）
+            if 'username' in form_data:
+                # 检查用户名是否已被使用
+                existing_user = User.query.filter_by(username=form.username.data).first()
+                if existing_user and existing_user.user_id != int(user_id):
+                    return jsonify({'code': 400, 'message': '用户名已被使用'}), 400
+                user.username = form.username.data
+
+            if 'gender' in form_data:
+                user.gender = form.gender.data
+
+            if 'age' in form_data:
+                user.age = form.age.data
+
+            if 'bio' in form_data:
+                user.bio = form.bio.data
+
+            if 'avatar_url' in form_data:
+                user.avatar_url = form.avatar_url.data
+
+            user.updated_at = datetime.utcnow()
+            db.session.commit()
+
+            return jsonify({
+                'code': 200,
+                'message': '个人资料更新成功',
+                'data': user.to_dict()
+            })
+    except Exception as e:
+        traceback.print_exc()
+        return jsonify({
+            "code": 500,
+            "message": "服务器错误",
+            "errors": {"服务器": [str(e)]},
+            "data": {}
+        }), 500
