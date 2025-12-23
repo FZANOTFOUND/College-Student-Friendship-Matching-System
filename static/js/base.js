@@ -176,6 +176,11 @@ document.addEventListener("DOMContentLoaded", () => {
             conversation.innerHTML = '<a class="nav-link" href="/conversations">对话</a >';
             navMenu.appendChild(conversation);
 
+            const posts = document.createElement('li');
+            posts.className = 'nav-item';
+            posts.innerHTML = '<a class="nav-link" href="/posts">帖子</a >';
+            navMenu.appendChild(posts);
+
             // 登出链接
             const logoutItem = document.createElement('li');
             logoutItem.className = 'nav-item';

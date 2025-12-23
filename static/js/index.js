@@ -64,14 +64,19 @@ document.addEventListener("DOMContentLoaded", () => {
         }
         if(isAuthenticated) {
             const a3 = document.createElement('a');
+            const a4 = document.createElement('a');
             const a2 = document.createElement('button');
             a3.href = '/conversations'
             a3.textContent = '对话'
+            a4.href = '/posts'
+            a4.textContent = '帖子'
             a3.className = 'btn btn-primary me-2';
+            a4.className = 'btn btn-primary me-2';
             a2.className = 'btn btn-outline-secondary';
             a2.textContent = '登出';
             a2.addEventListener('click', handleLogout)
             cardMenu.appendChild(a3);
+            cardMenu.appendChild(a4);
             cardMenu.appendChild(a2);
         }
         else{

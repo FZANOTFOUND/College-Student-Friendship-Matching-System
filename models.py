@@ -3,7 +3,7 @@ from flask_login import UserMixin
 from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime, timedelta
 from extensions import db, bcrypt
-
+from sqlalchemy import func, Index, Text, text, DDL, event, and_, desc
 
 class User(db.Model):
     __tablename__ = 'users'
@@ -178,3 +178,76 @@ class Notification(db.Model):
 
     # 关联接收者
     recipient = db.relationship('User', backref='notifications')
+
+
+class Post(db.Model):
+    __tablename__ = 'posts'
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.user_id', ondelete='CASCADE'), nullable=False, index=True)
+    title = db.Column(db.String(255), nullable=False)
+    content = db.Column(Text, nullable=False)
+    status = db.Column(db.String(20), default='pending', index=True)
+    created_at = db.Column(db.DateTime, default=datetime.now)
+    updated_at = db.Column(db.DateTime, default=datetime.now, onupdate=datetime.now)
+    likes_count = db.Column(db.Integer, default=0)
+    comments_count = db.Column(db.Integer, default=0)
+    view_count = db.Column(db.Integer, default=0)
+    review_notes = db.Column(Text)
+    reviewed_at = db.Column(db.DateTime, onupdate=datetime.now)
+    reviewed_by = db.Column(db.Integer, db.ForeignKey('users.user_id'))
+
+    def to_dict(self, content=False):
+        data = {
+            'id': self.id,
+            'user_id': self.user_id,
+            'title': self.title,
+            'status': self.status,
+            'likes_count': self.likes_count,
+            'comments_count': self.comments_count,
+            'view_count': self.view_count,
+            'created_at': self.created_at.isoformat() if self.created_at else None,
+            'updated_at': self.updated_at.isoformat() if self.updated_at else None,
+        }
+        if content:
+            data['content'] = self.content
+        return data
+
+
+class PostLike(db.Model):
+    __tablename__ = 'post_likes'
+
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    post_id = db.Column(db.Integer, db.ForeignKey('posts.id', ondelete='CASCADE'), nullable=False, index=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.user_id', ondelete='CASCADE'), nullable=False, index=True)
+    created_at = db.Column(db.DateTime, default=datetime.now, index=True)
+
+    __table_args__ = (
+        db.UniqueConstraint('post_id', 'user_id', name='unique_post_like'),
+    )
+
+
+class PostComment(db.Model):
+    __tablename__ = 'post_comments'
+
+    id = db.Column(db.Integer, primary_key=True)
+    post_id = db.Column(db.Integer, db.ForeignKey('posts.id', ondelete='CASCADE'), nullable=False, index=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.user_id', ondelete='CASCADE'), nullable=False, index=True)
+    parent_id = db.Column(db.Integer, db.ForeignKey('post_comments.id', ondelete='CASCADE'), index=True)
+    content = db.Column(Text, nullable=False)
+    status = db.Column(db.String(20), default='pending', index=True)
+    created_at = db.Column(db.DateTime, default=datetime.now, index=True)
+    updated_at = db.Column(db.DateTime, default=datetime.now, onupdate=datetime.now)
+    review_notes = db.Column(Text)
+    reviewed_at = db.Column(db.DateTime, onupdate=datetime.now)
+    reviewed_by = db.Column(db.Integer, db.ForeignKey('users.user_id'))
+
+    def to_dict(self):
+        data = {
+            'id': self.id,
+            'user_id': self.user_id,
+            'status': self.status,
+            'created_at': self.created_at.isoformat() if self.created_at else None,
+            'updated_at': self.updated_at.isoformat() if self.updated_at else None,
+            'content': self.content,
+        }
+        return data

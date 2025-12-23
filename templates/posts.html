@@ -1,0 +1,244 @@
+{% extends 'base.html' %}
+
+{% block title %}所有帖子 - 神秘社区{% endblock %}
+
+{% block css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/posts.css') }}">
+<style>
+/* 覆盖/补充样式：使帖子卡片铺满一行并让搜索框对齐 */
+.posts-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  justify-content: space-between;
+  margin-bottom: 18px;
+}
+
+/* 搜索框：最大宽度并响应式 */
+.search-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.search-wrapper input {
+  width: 260px;
+  max-width: 36vw;
+  min-width: 180px;
+}
+
+/* 帖子区域：每条占满整行 */
+#postsContainer .col-12 {
+  padding-left: 0;
+  padding-right: 0;
+}
+
+/* 卡片铺满行并略加样式 */
+.post-full-card {
+  width: 100%;
+  padding: 18px;
+  border-radius: 10px;
+  background: #ffffff;
+  box-shadow: 0 6px 18px rgba(15,23,42,0.04);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+}
+
+/* 卡片左侧主体 */
+.post-full-main {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+/* 标题和摘要 */
+.post-full-title {
+  margin: 0 0 6px 0;
+  font-size: 1.15rem;
+  font-weight: 600;
+}
+.post-full-meta {
+  font-size: 0.88rem;
+  color: #6b7280;
+  margin-bottom: 8px;
+}
+.post-full-excerpt {
+  color: #374151;
+  line-height: 1.6;
+  white-space: pre-wrap;
+  margin-bottom: 8px;
+}
+
+/* 卡片右侧操作区 */
+.post-full-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8px;
+  flex: 0 0 auto;
+}
+.post-stats {
+  font-size: 0.9rem;
+  color: #4b5563;
+}
+.view-btn {
+  padding: 6px 12px;
+  border-radius: 6px;
+  border: 1px solid #0d6efd;
+  color: #0d6efd;
+  text-decoration: none;
+}
+.view-btn:hover {
+  background: #0d6efd;
+  color: #fff;
+}
+
+/* 分页居左（和卡片左对齐） */
+nav ul.pagination {
+  margin-left: 0;
+}
+
+/* 响应式：小屏时把actions放到下一行右侧 */
+@media (max-width: 767.98px) {
+  .post-full-card {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .post-full-actions {
+    align-items: flex-start;
+    flex-direction: row;
+    justify-content: space-between;
+  }
+  .search-wrapper input {
+    max-width: 180px;
+  }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container" style="padding-top:80px;">
+
+  <!-- header: title + search aligned to right -->
+  <div class="posts-header">
+    <h4 class="mb-0">所有帖子</h4>
+
+    <div class="search-wrapper">
+      <input id="searchInput" class="form-control form-control-sm" placeholder="搜索标题或内容" />
+      <button id="searchBtn" class="btn btn-sm btn-primary">搜索</button>
+    </div>
+  </div>
+
+  <!-- posts: each row full width -->
+  <div id="postsContainer" class="row gy-3"></div>
+
+  <nav>
+    <ul class="pagination mt-3" id="postsPagination"></ul>
+  </nav>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+(function(){
+  const perPage = 12;
+  let allPosts = [];
+  let filtered = [];
+  let currentPage = 1;
+
+  function escapeHtml(unsafe){
+    if(unsafe === null || unsafe === undefined) return '';
+    return String(unsafe)
+      .replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;')
+      .replaceAll('\"','&quot;').replaceAll("'","&#039;");
+  }
+
+  async function loadPosts(){
+    try{
+      const res = await apiFetch('/api/posts/all', { method: 'GET' });
+      if(Array.isArray(res.data)){
+        allPosts = res.data;
+      } else if(res.data.items && Array.isArray(res.data.items)){
+        allPosts = res.data.items;
+      } else if(Array.isArray(res.data.data)){
+        allPosts = res.data.data;
+      } else {
+        allPosts = res.data || [];
+      }
+      filtered = allPosts.slice();
+      currentPage = 1;
+      renderPage();
+    }catch(err){
+      console.error(err);
+      insertContainer('danger', err.message || '加载帖子失败');
+    }
+  }
+
+  function renderPage(){
+    const container = document.getElementById('postsContainer');
+    container.innerHTML = '';
+    const start = (currentPage - 1) * perPage;
+    const pageItems = filtered.slice(start, start + perPage);
+    if(pageItems.length === 0){
+      container.innerHTML = '<div class="col-12 text-center text-muted p-4">暂无帖子</div>';
+      renderPagination();
+      return;
+    }
+
+    pageItems.forEach(p => {
+      const excerpt = (p.content || '').slice(0, 300).replaceAll('\n','<br>');
+      const author = p.user?.username ?? p.username ?? ('ID:' + (p.user_id ?? ''));
+      const created = p.created_at ? new Date(p.created_at).toLocaleString() : '';
+
+      const col = document.createElement('div');
+      col.className = 'col-12';
+
+      col.innerHTML = `
+        <div class="post-full-card">
+          <div class="post-full-main">
+            <h5 class="post-full-title">${escapeHtml(p.title || '（无标题）')}</h5>
+            <div class="post-full-meta">${escapeHtml(author)} · ${escapeHtml(created)}</div>
+            <div class="post-full-excerpt">${excerpt}</div>
+          </div>
+
+          <div class="post-full-actions">
+            <div class="post-stats">❤ ${escapeHtml(String(p.likes_count || 0))} · 💬 ${escapeHtml(String(p.comments_count || 0))} · 👁 ${escapeHtml(String(p.view_count || 0))}</div>
+            <a class="view-btn" href="/posts/view?post_id=${encodeURIComponent(p.id)}">查看</a>
+          </div>
+        </div>
+      `;
+      container.appendChild(col);
+    });
+
+    renderPagination();
+  }
+
+  function renderPagination(){
+    const ul = document.getElementById('postsPagination');
+    ul.innerHTML = '';
+    const pages = Math.max(1, Math.ceil(filtered.length / perPage));
+    function li(content, cb, active){
+      const el = document.createElement('li');
+      el.className = 'page-item' + (active? ' active' : '');
+      el.innerHTML = `<a class="page-link" href="#">${content}</a>`;
+      if(cb) el.addEventListener('click', (e)=>{ e.preventDefault(); cb(); });
+      return el;
+    }
+    ul.appendChild(li('‹', ()=>{ if(currentPage>1){ currentPage--; renderPage(); } } ));
+    const start = Math.max(1, currentPage - 2);
+    const end = Math.min(pages, currentPage + 2);
+    for(let i=start;i<=end;i++) ul.appendChild(li(i, ()=>{ currentPage = i; renderPage(); }, i===currentPage));
+    ul.appendChild(li('›', ()=>{ if(currentPage<pages){ currentPage++; renderPage(); } } ));
+  }
+
+  document.getElementById('searchBtn').addEventListener('click', ()=>{
+    const q = document.getElementById('searchInput').value.trim().toLowerCase();
+    if(!q) filtered = allPosts.slice();
+    else filtered = allPosts.filter(p => (p.title||'').toLowerCase().includes(q) || (p.content||'').toLowerCase().includes(q));
+    currentPage = 1; renderPage();
+  });
+
+  document.addEventListener('DOMContentLoaded', loadPosts);
+})();
+</script>
+{% endblock %}

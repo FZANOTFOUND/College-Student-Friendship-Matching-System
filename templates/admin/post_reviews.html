@@ -1,0 +1,128 @@
+{% extends 'base.html' %}
+
+
+{% block title %}帖子审核 - 管理员{% endblock %}
+
+
+{% block css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/posts.css') }}">
+<style>
+.pending-card { border:1px dashed #ffc107; }
+</style>
+{% endblock %}
+
+
+{% block content %}
+<div class="container" style="padding-top:80px;">
+<div class="row">
+<div class="col-6">
+<h5>待审核帖子</h5>
+<div id="pendingPosts"></div>
+</div>
+<div class="col-6">
+<h5>待审核评论</h5>
+<div id="pendingComments"></div>
+</div>
+</div>
+</div>
+{% endblock %}
+
+
+{% block scripts %}
+<script>
+(function(){
+  function escapeHtml(unsafe){
+    if(unsafe === null || unsafe === undefined) return '';
+    return String(unsafe)
+      .replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;')
+      .replaceAll('\"','&quot;').replaceAll("'","&#039;");
+  }
+
+  async function loadPending(){
+    try{
+      const rp = await apiFetch('/api/posts/post/pending', { method: 'GET' });
+      const rc = await apiFetch('/api/posts/comment/pending', { method: 'GET' });
+      renderPendingPosts(rp.data || []);
+      renderPendingComments(rc.data || []);
+    }catch(err){ console.error(err); insertContainer('danger', err.message || '加载待审核项失败'); }
+  }
+
+  function renderPendingPosts(list){
+    const c = document.getElementById('pendingPosts'); c.innerHTML = '';
+    if(!list.length) return c.innerHTML = '<div class="text-muted">暂无待审核帖子</div>';
+    list.forEach(p => {
+      const author = p.user?.username ?? p.username ?? 'ID:'+ (p.user_id||'');
+      const el = document.createElement('div');
+      el.className = 'card mb-2 pending-card';
+      el.innerHTML = `
+        <div class="card-body">
+          <h6>${escapeHtml(p.title || '(无标题)')}</h6>
+          <div class="small text-muted">${escapeHtml(author)} · ${escapeHtml(new Date(p.created_at).toLocaleString())}</div>
+          <div class="mt-2">${p.content ? p.content.replaceAll('\n','<br>') : ''}</div>
+          <div class="mt-2 d-flex gap-2">
+            <button class="btn btn-sm btn-success" data-id="${p.id}" data-action="approve-post">通过</button>
+            <button class="btn btn-sm btn-danger" data-id="${p.id}" data-action="reject-post">拒绝</button>
+            <a class="btn btn-sm btn-outline-secondary" href="/posts/view?post_id=${encodeURIComponent(p.id)}" target="_blank">查看详情</a>
+          </div>
+        </div>
+      `;
+      c.appendChild(el);
+    });
+    c.querySelectorAll('button[data-action]').forEach(btn => btn.addEventListener('click', onPostAction));
+  }
+
+  async function onPostAction(e){
+    const btn = e.currentTarget; const id = btn.getAttribute('data-id'); const a = btn.getAttribute('data-action');
+    if(a === 'approve-post'){
+      try{ const res = await apiFetch('/api/posts/allow/post?post_id=' + encodeURIComponent(id), { method: 'GET' }); insertContainer('success', res.message || '已通过'); loadPending(); }catch(err){ console.error(err); insertContainer('danger', err.message||'操作失败'); }
+    }else if(a === 'reject-post'){
+      const reason = prompt('请输入拒绝原因（可选）','');
+      insertContainer('warning','暂未实现拒绝接口，请后端新增 POST /api/posts/reject');
+    }
+  }
+
+  function renderPendingComments(list){
+    const c = document.getElementById('pendingComments'); c.innerHTML = '';
+    if(!list.length) return c.innerHTML = '<div class="text-muted">暂无待审核评论</div>';
+    list.forEach(cm => {
+      const author = cm.user?.username ?? cm.username ?? 'ID:'+ (cm.user_id||'');
+      const el = document.createElement('div');
+      el.className = 'card mb-2 pending-card';
+      el.innerHTML = `
+        <div class="card-body">
+          <div class="small text-muted">${escapeHtml(author)} · ${escapeHtml(new Date(cm.created_at).toLocaleString())}</div>
+          <div class="mt-2">${escapeHtml(cm.content)}</div>
+          <div class="mt-2 d-flex gap-2">
+            <button class="btn btn-sm btn-success" data-id="${cm.id}" data-action="approve-comment">通过</button>
+            <button class="btn btn-sm btn-danger" data-id="${cm.id}" data-action="reject-comment">拒绝</button>
+            <a class="btn btn-sm btn-outline-secondary" href="/posts/view?post_id=${encodeURIComponent(cm.post_id)}" target="_blank">查看帖</a>
+          </div>
+        </div>
+      `;
+      c.appendChild(el);
+    });
+    c.querySelectorAll('button[data-action]').forEach(btn => btn.addEventListener('click', onCommentAction));
+  }
+
+  async function onCommentAction(e){
+    const btn = e.currentTarget; const id = btn.getAttribute('data-id'); const a = btn.getAttribute('data-action');
+    if(a === 'approve-comment'){
+      try{
+          const res = await apiFetch('/api/posts/allow/comment?comment_id=' + encodeURIComponent(id), { method: 'GET' });
+          insertContainer('success', res.message || '已通过');
+          loadPending();
+      }
+      catch(err){
+          console.error(err);
+          insertContainer('danger', err.message||'操作失败');
+      }
+    }else if(a === 'reject-comment'){
+      const reason = prompt('请输入拒绝原因（可选）','');
+      insertContainer('warning','暂未实现拒绝接口，请后端新增 POST /api/posts/comment/reject');
+    }
+  }
+
+  document.addEventListener('DOMContentLoaded', loadPending);
+})();
+</script>
+{% endblock %}

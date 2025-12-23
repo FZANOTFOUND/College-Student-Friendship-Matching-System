@@ -1,0 +1,210 @@
+{% extends 'base.html' %}
+
+{% block title %}发帖 - 神秘社区{% endblock %}
+
+{% block css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/posts.css') }}">
+<style>
+  .create-card { max-width: 900px; margin: 40px auto; }
+  .form-label { font-weight: 600; }
+  #contentInput { min-height: 240px; font-family: inherit; }
+  .bottom-actions { display:flex; gap:12px; align-items:center; justify-content:space-between; margin-top:12px; }
+  .preview-box { border:1px solid #e6eef8; background:#fbfdff; padding:12px; border-radius:6px; white-space:pre-wrap; }
+  .char-count { color:#6b7280; font-size:0.9rem; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container" style="padding-top:80px;">
+  <div class="card create-card">
+    <div class="card-body">
+      <h4 class="card-title mb-3">发帖</h4>
+
+      <div class="mb-3">
+        <label class="form-label" for="titleInput">标题</label>
+        <input id="titleInput" class="form-control" type="text" placeholder="请输入标题（必填）" maxlength="200" />
+      </div>
+
+      <div class="mb-3">
+        <label class="form-label" for="contentInput">正文</label>
+        <textarea id="contentInput" class="form-control" placeholder="请输入内容，支持换行（必填）"></textarea>
+        <div class="d-flex justify-content-between mt-1">
+          <div class="form-check">
+{#            <input class="form-check-input" type="checkbox" id="isAnonymous" />#}
+{#            <label class="form-check-label" for="isAnonymous">匿名发布</label>#}
+          </div>
+          <div class="char-count"><span id="charCount">0</span> 字</div>
+        </div>
+      </div>
+
+{#      <div class="mb-3">#}
+{#        <button id="togglePreview" class="btn btn-sm btn-outline-secondary">预览</button>#}
+{#      </div>#}
+
+      <div id="previewArea" style="display:none;" class="mb-3">
+        <div class="preview-box" id="previewBox"></div>
+      </div>
+
+      <div class="bottom-actions">
+        <div>
+          <button id="saveDraft" class="btn btn-sm btn-outline-secondary">保存草稿</button>
+          <button id="clearDraft" class="btn btn-sm btn-outline-danger">清空草稿</button>
+        </div>
+
+        <div>
+          <a href="/posts" class="btn btn-sm btn-secondary me-2">取消</a>
+          <button id="submitBtn" class="btn btn-primary">发布</button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+(function(){
+  const DRAFT_KEY = 'draft_post';
+  const titleInput = document.getElementById('titleInput');
+  const contentInput = document.getElementById('contentInput');
+  //const isAnonymous = document.getElementById('isAnonymous');
+  const submitBtn = document.getElementById('submitBtn');
+  const saveDraftBtn = document.getElementById('saveDraft');
+  const clearDraftBtn = document.getElementById('clearDraft');
+  const togglePreviewBtn = document.getElementById('togglePreview');
+  const previewArea = document.getElementById('previewArea');
+  const previewBox = document.getElementById('previewBox');
+  const charCount = document.getElementById('charCount');
+
+  // restore draft if exists
+  function loadDraft(){
+    try{
+      const raw = localStorage.getItem(DRAFT_KEY);
+      if(!raw) return;
+      const d = JSON.parse(raw);
+      if(d.title) titleInput.value = d.title;
+      if(d.content) contentInput.value = d.content;
+      if(d.anonymous) isAnonymous.checked = !!d.anonymous;
+      updateCharCount();
+    }catch(e){ console.warn('loadDraft error', e); }
+  }
+
+  function saveDraft(){
+    const data = {
+      title: titleInput.value || '',
+      content: contentInput.value || '',
+      anonymous: isAnonymous.checked
+    };
+    localStorage.setItem(DRAFT_KEY, JSON.stringify(data));
+    insertContainer('success', '已保存草稿到本地');
+  }
+
+  function clearDraft(){
+    localStorage.removeItem(DRAFT_KEY);
+    titleInput.value = '';
+    contentInput.value = '';
+    isAnonymous.checked = false;
+    updateCharCount();
+    insertContainer('success', '草稿已清空');
+  }
+
+  function updateCharCount(){
+    const n = (contentInput.value || '').length;
+    charCount.textContent = n;
+  }
+
+  // preview
+  function renderPreview(){
+    const txt = contentInput.value || '';
+    // very simple: escape HTML then replace newlines
+    const escaped = String(txt)
+      .replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;')
+      .replaceAll('\"','&quot;');
+    previewBox.innerHTML = escaped.replaceAll('\\n','<br>');
+  }
+
+  // submit
+  async function submitPost(){
+    const title = titleInput.value.trim();
+    const content = contentInput.value.trim();
+
+    if(!title){
+      insertContainer('warning', '请输入标题');
+      return;
+    }
+    if(!content){
+      insertContainer('warning', '请输入正文');
+      return;
+    }
+
+    submitBtn.disabled = true;
+    submitBtn.textContent = '发布中...';
+
+    try{
+      // backend accepts JSON or form; we use JSON via PUT to /api/posts/create
+      const body = { title, content };
+      // if you want to pass anonymous flag to backend, include it: adjust backend to use it if needed
+      // if(isAnonymous.checked) body.is_anonymous = true;
+
+      const res = await apiFetch('/api/posts/create', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
+      });
+
+      insertContainer('success', res.message || '发布成功');
+      // clear draft and redirect to list
+      localStorage.removeItem(DRAFT_KEY);
+      // try to give the user a moment to see message
+      setTimeout(()=> { window.location.href = '/posts'; }, 600);
+    }catch(err){
+      console.error(err);
+      if(err && err.errors) showErrors(err.errors, 5);
+      else insertContainer('danger', err.message || '发布失败');
+    }finally{
+      submitBtn.disabled = false;
+      submitBtn.textContent = '发布';
+    }
+  }
+
+  // auto-save every 8 seconds if content changed
+  let autoSaveTimer = null;
+  function startAutoSave(){
+    if(autoSaveTimer) clearInterval(autoSaveTimer);
+    autoSaveTimer = setInterval(() => {
+      const content = contentInput.value || '';
+      if(content.length > 0) {
+        // only save when there is something to save
+        const data = { title: titleInput.value || '', content, anonymous: isAnonymous.checked };
+        localStorage.setItem(DRAFT_KEY, JSON.stringify(data));
+      }
+    }, 8000);
+  }
+
+  // events
+  contentInput.addEventListener('input', updateCharCount);
+  titleInput.addEventListener('input', updateCharCount);
+  saveDraftBtn.addEventListener('click', saveDraft);
+  clearDraftBtn.addEventListener('click', ()=>{ if(confirm('确认清空草稿？')) clearDraft(); });
+  /*togglePreviewBtn.addEventListener('click', ()=> {
+    if(previewArea.style.display === 'none' || previewArea.style.display === ''){
+      renderPreview();
+      previewArea.style.display = 'block';
+      togglePreviewBtn.textContent = '关闭预览';
+    } else {
+      previewArea.style.display = 'none';
+      togglePreviewBtn.textContent = '预览';
+    }
+  });*/
+
+  submitBtn.addEventListener('click', submitPost);
+
+  // init
+  loadDraft();
+  updateCharCount();
+  startAutoSave();
+
+})();
+</script>
+{% endblock %}

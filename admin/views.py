@@ -35,3 +35,8 @@ def users():
 @my_jwt_required(limit=1, api=False)
 def conversations():
     return render_template('admin/conversations.html')
+
+@admin_bp.route('/posts')
+@my_jwt_required(limit=1, api=False)
+def notifications_create():
+    return render_template('admin/post_reviews.html')

@@ -1,0 +1,172 @@
+{% extends 'base.html' %}
+
+
+{% block title %}帖子详情 - 神秘社区{% endblock %}
+
+
+{% block css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/posts.css') }}">
+    <style>
+  body{
+      height: 80vh;
+  }
+  .status-badge {
+display: inline-block;
+padding: 0.18rem 0.45rem;
+border-radius: 0.35rem;
+font-size: 0.8rem;
+vertical-align: middle;
+margin-left: 0.5rem;
+}
+.status-pending-badge { background:#fff3cd; color:#856404; border:1px solid #ffe8a1; }
+.status-ok-badge { background:#d1fae5; color:#065f46; border:1px solid #9ae6b4; }
+    </style>
+{% endblock %}
+
+
+{% block content %}
+<div class="container" style="padding-top:80px; max-width:900px;">
+<div id="postContainer"></div>
+</div>
+{% endblock %}
+
+
+{% block scripts %}
+<script>
+(function(){
+  function qs(name){
+    return new URLSearchParams(window.location.search).get(name);
+  }
+  function escapeHtml(unsafe){
+    if(unsafe === null || unsafe === undefined) return '';
+    return String(unsafe)
+      .replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;')
+      .replaceAll('"','&quot;').replaceAll("'","&#039;");
+  }
+
+  async function fetchComments(pid){
+    try{
+      const res = await apiFetch('/api/posts/post/get_comment?post_id=' + encodeURIComponent(pid), { method: 'GET' });
+      if(Array.isArray(res.data)) return res.data;
+      if(Array.isArray(res.data.data)) return res.data.data;
+      return res.data || [];
+    }catch(err){
+      console.error('加载评论失败', err);
+      return [];
+    }
+  }
+
+  async function loadPost(){
+    const pid = qs('post_id');
+    if(!pid) return insertContainer('warning','缺少 post_id');
+    try{
+      const res = await apiFetch('/api/posts/single?post_id=' + encodeURIComponent(pid), { method: 'GET' });
+      const p = Array.isArray(res.data) ? res.data[0] : (res.data[0] ?? res.data);
+      if(!p) return insertContainer('warning','帖子不存在');
+
+      const author = p.user?.username ?? p.username ?? ('ID:' + (p.user_id ?? ''));
+      const created = p.created_at ? new Date(p.created_at).toLocaleString() : '';
+      const status = (p.status || '').toLowerCase();
+
+      // fetch comments separately
+      const comments = await fetchComments(pid);
+      const commentsHtml = (comments || []).map(c => `
+        <div class="border rounded p-2 mb-2">
+          <div class="small text-muted">${escapeHtml(c.user?.username ?? c.username ?? 'ID:'+(c.user_id||''))} · ${escapeHtml(c.created_at ? new Date(c.created_at).toLocaleString() : '')}</div>
+          <div>${escapeHtml(c.content)}</div>
+        </div>
+      `).join('');
+
+      // status badge
+      let statusBadge = '';
+      if(status === 'pending'){
+        statusBadge = '<span class="status-badge status-pending-badge">审核中</span>';
+      }else if(status === 'ok' || status === 'approved'){
+        statusBadge = '<span class="status-badge status-ok-badge">已通过</span>';
+      }
+
+      const html = `
+        <div class="card">
+          <div class="card-body">
+            <h3>${escapeHtml(p.title || '')}${statusBadge}</h3>
+            <div class="text-muted small mb-3">${escapeHtml(author)} · ${escapeHtml(created)}</div>
+            <div class="mb-3 post-content">${p.content ? p.content.replaceAll('\n','<br>') : ''}</div>
+
+            <div class="d-flex gap-2 align-items-center mb-3">
+              <button id="likeBtn" class="btn btn-sm btn-outline-primary">❤ 点赞 (<span id="likeCount">${escapeHtml(String(p.likes_count||0))}</span>)</button>
+              <button id="showCommentBtn" class="btn btn-sm btn-outline-secondary">💬 评论</button>
+              <div class="ms-auto small text-muted">👁 <span id="viewCount">${escapeHtml(String(p.view_count||0))}</span></div>
+            </div>
+
+            <div id="commentNotice" class="mb-3" style="display:none;"></div>
+
+            <div id="commentBox" style="display:none;" class="mb-3">
+              <textarea id="commentInput" class="form-control" rows="3" placeholder="写下你的评论（审核通过后显示）"></textarea>
+              <div class="mt-2 text-end">
+                <button id="submitComment" class="btn btn-sm btn-primary">提交评论</button>
+              </div>
+            </div>
+
+            <h5>评论</h5>
+            <div id="commentsList">${commentsHtml || '<div class="text-muted">暂无评论</div>'}</div>
+          </div>
+        </div>
+      `;
+
+      document.getElementById('postContainer').innerHTML = html;
+
+      const likeBtn = document.getElementById('likeBtn');
+      const showCommentBtn = document.getElementById('showCommentBtn');
+      const commentBox = document.getElementById('commentBox');
+      const commentNotice = document.getElementById('commentNotice');
+
+      // If status is pending, show review notice and disable interactions
+      if(status === 'pending'){
+        // show notice
+        commentNotice.style.display = 'block';
+        commentNotice.innerHTML = '<div class="alert alert-warning mb-0" role="alert">此帖子正在审核中，暂不可点赞或评论。</div>';
+        // disable like and comment buttons
+        likeBtn.disabled = true;
+        showCommentBtn.disabled = true;
+      }
+
+      likeBtn.addEventListener('click', async ()=>{
+        try{
+          const r = await apiFetch('/api/posts/like?post_id=' + encodeURIComponent(pid), { method: 'GET' });
+          document.getElementById('likeCount').textContent = parseInt(document.getElementById('likeCount').textContent||'0') + 1;
+          insertContainer('success', r.message || '点赞成功');
+        }catch(err){ console.error(err); insertContainer('danger', err.message || '点赞失败'); }
+      });
+
+      showCommentBtn.addEventListener('click', ()=>{
+        if(showCommentBtn.disabled) return;
+        const box = document.getElementById('commentBox'); box.style.display = box.style.display === 'none' ? 'block':'none';
+      });
+
+      document.getElementById('submitComment').addEventListener('click', async ()=>{
+          clearContainer();
+        const content = document.getElementById('commentInput').value.trim();
+        if(!content) return insertContainer('warning','评论不能为空');
+        try{
+          const r = await apiFetch('/api/posts/comment?post_id=' + encodeURIComponent(pid) + '&content=' + encodeURIComponent(content), { method: 'GET' });
+          insertContainer('success', r.message || '评论提交成功');
+          document.getElementById('commentInput').value = '';
+          // refresh comments list
+          const fresh = await fetchComments(pid);
+          const freshHtml = (fresh || []).map(c => `
+            <div class="border rounded p-2 mb-2">
+              <div class="small text-muted">${escapeHtml(c.user?.username ?? c.username ?? 'ID:'+(c.user_id||''))} · ${escapeHtml(c.created_at ? new Date(c.created_at).toLocaleString() : '')}</div>
+              <div>${escapeHtml(c.content)}</div>
+            </div>
+          `).join('') || '<div class="text-muted">暂无评论</div>';
+          document.getElementById('commentsList').innerHTML = freshHtml;
+        }catch(err){ console.error(err); insertContainer('danger', err.message || '评论失败'); }
+      });
+
+    }catch(err){ console.error(err); insertContainer('danger', err.message || '加载帖子失败'); }
+  }
+
+  document.addEventListener('DOMContentLoaded', loadPost);
+})();
+</script>
+{% endblock %}
