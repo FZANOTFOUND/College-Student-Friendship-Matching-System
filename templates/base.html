@@ -2,7 +2,9 @@
 
 {% block page %}
 	<div class="container">
-          <div id="container-inner"></div>
-          {% block content %}{% endblock %}
+        <div id="container-inner"></div>
+        <div class="main-objects">
+            {% block content %}{% endblock %}
+        </div>
     </div>
 {% endblock %}

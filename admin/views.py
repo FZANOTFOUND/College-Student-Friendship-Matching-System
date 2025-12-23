@@ -14,9 +14,24 @@ from werkzeug.security import generate_password_hash, check_password_hash  # 对
 from extensions import mail, db
 from models import EmailVerification, User
 from decorators import *
+@admin_bp.route('/', methods=['GET', 'POST'])
+@my_jwt_required(limit=1, api=False)
+def root():
+    return render_template('admin/root.html')
 
 
 @admin_bp.route('/info', methods=['GET', 'POST'])
 @my_jwt_required(limit=1, api=False)
 def info():
     return render_template('admin/info.html')
+
+@admin_bp.route('/users', methods=['GET', 'POST'])
+@my_jwt_required(limit=1, api=False)
+def users():
+    return render_template('admin/users.html')
+
+
+@admin_bp.route('/conversations', methods=['GET', 'POST'])
+@my_jwt_required(limit=1, api=False)
+def conversations():
+    return render_template('admin/conversations.html')

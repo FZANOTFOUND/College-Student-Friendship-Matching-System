@@ -27,7 +27,7 @@ document.getElementById('loginForm').addEventListener('submit', function (e) {
                 //setLocalStorage(data.data);
                 window.location.href = '/';
             }
-            else if(data.code === 400){
+            else if(data.code === 400 || data.code === 403){
                 showErrors(data.errors);
             }
             else{

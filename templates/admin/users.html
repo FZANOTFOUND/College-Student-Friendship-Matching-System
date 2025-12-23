@@ -1,0 +1,313 @@
+{% extends 'utils.html' %}
+
+{% block title %}用户管理 - 神秘数据库大作业{% endblock %}
+
+{% block css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/admin.css') }}">
+{% endblock %}
+
+{% block page %}
+<div class="container" style="padding-top: 80px;">
+  <div id="container-inner"></div>
+
+  <div class="card">
+    <div class="card-body">
+      <div class="d-flex justify-content-between align-items-center mb-3">
+        <h5 class="card-title mb-0">用户管理</h5>
+        <div class="d-flex gap-2">
+          <input id="searchInput" class="form-control form-control-sm" placeholder="搜索用户名或邮箱">
+          <select id="statusFilter" class="form-select form-select-sm">
+            <option value="">全部状态</option>
+            <option value="active">Active</option>
+            <option value="suspended">Suspended</option>
+          </select>
+          <select id="roleFilter" class="form-select form-select-sm">
+            <option value="">全部角色</option>
+            <option value="0">普通用户 (0)</option>
+            <option value="1">管理员 (1)</option>
+            <option value="2">超级管理员 (2)</option>
+          </select>
+          <button id="searchBtn" class="btn btn-sm btn-primary">查询</button>
+        </div>
+      </div>
+
+      <div class="table-responsive">
+        <table class="table table-hover table-sm">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>用户名</th>
+              <th>邮箱</th>
+              <th>状态</th>
+              <th>角色</th>
+              <th>注册时间</th>
+              <th>操作</th>
+            </tr>
+          </thead>
+          <tbody id="usersBody"></tbody>
+        </table>
+      </div>
+
+      <nav>
+        <ul class="pagination pagination-sm" id="pagination"></ul>
+      </nav>
+    </div>
+  </div>
+</div>
+
+<!-- 用户详情模态框 -->
+<div class="modal fade" id="userDetailModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">用户详情</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <div id="userDetailContent"></div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">关闭</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 修改角色模态框 -->
+<div class="modal fade" id="changeRoleModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">修改用户角色</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <form id="changeRoleForm">
+          <input type="hidden" id="changeRoleUserId">
+          <div class="mb-3">
+            <label class="form-label">当前用户</label>
+            <div id="changeRoleUsername" class="fw-bold"></div>
+          </div>
+          <div class="mb-3">
+            <label for="newRole" class="form-label">新角色</label>
+            <select id="newRole" class="form-select">
+              <option value="0">普通用户 (0)</option>
+              <option value="1">管理员 (1)</option>
+              <option value="2">超级管理员 (2)</option>
+            </select>
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+        <button type="button" id="submitChangeRole" class="btn btn-primary">保存</button>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// 管理界面脚本：兼容后端返回的不同字段名（例如 user_id / id，tag_name / name）
+(function(){
+  let currentPage = 1;
+  const perPage = 20;
+
+  function buildQueryParams(params){
+    return Object.keys(params)
+      .filter(k => params[k] !== undefined && params[k] !== null && params[k] !== '')
+      .map(k => encodeURIComponent(k) + '=' + encodeURIComponent(params[k]))
+      .join('&');
+  }
+
+  async function loadUsers(page=1){
+    currentPage = page;
+    const search = document.getElementById('searchInput').value.trim();
+    const status = document.getElementById('statusFilter').value;
+    const role = document.getElementById('roleFilter').value;
+
+    const q = buildQueryParams({ page, per_page: perPage, search, status, role });
+    try{
+      const res = await apiFetch('/api/admin/query/users?' + q, { method: 'GET' });
+      renderUsers(res.data.items, res.data.page, res.data.pages, res.data.total);
+    }catch(err){
+      console.error(err);
+      if(err && err.errors) showErrors(err.errors, 3);
+      else insertContainer('danger', err.message || '加载用户失败');
+    }
+  }
+
+  function renderUsers(users, page, pages, total){
+    const tbody = document.getElementById('usersBody');
+    tbody.innerHTML = '';
+    if(!users || users.length === 0){
+      const tr = document.createElement('tr');
+      tr.innerHTML = '<td colspan="7" class="text-center">没有找到用户</td>';
+      tbody.appendChild(tr);
+      renderPagination(page, pages, total);
+      return;
+    }
+
+    users.forEach((user, idx) => {
+      const uid = user.id ?? user.user_id ?? '';
+      const created = user.created_at ?? user.createdAt ?? '';
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td>${(page-1)*perPage + idx + 1}</td>
+        <td>${escapeHtml(user.username ?? '')}</td>
+        <td>${escapeHtml(user.email ?? '')}</td>
+        <td>${escapeHtml(user.status ?? '')}</td>
+        <td>${escapeHtml(String(user.role ?? ''))}</td>
+        <td>${escapeHtml(created)}</td>
+        <td>
+          <button class="btn btn-sm btn-outline-primary me-1" data-action="view" data-id="${uid}">查看</button>
+          <button class="btn btn-sm btn-outline-secondary" data-action="role" data-id="${uid}" data-username="${escapeHtml(user.username ?? '')}">修改角色</button>
+        </td>`;
+      tbody.appendChild(tr);
+    });
+
+    renderPagination(page, pages, total);
+    bindTableButtons();
+  }
+
+  function renderPagination(page, pages, total){
+    const ul = document.getElementById('pagination');
+    ul.innerHTML = '';
+    if(pages <= 1) return;
+
+    function li(content, cls, disabled){
+      const el = document.createElement('li');
+      el.className = 'page-item' + (cls ? ' ' + cls : '') + (disabled ? ' disabled' : '');
+      el.innerHTML = `<a class="page-link" href="#">${content}</a>`;
+      return el;
+    }
+
+    const prev = li('‹', '', page===1);
+    if(! (page===1)) prev.addEventListener('click', (e)=>{ e.preventDefault(); loadUsers(page-1); });
+    ul.appendChild(prev);
+
+    const start = Math.max(1, page - 2);
+    const end = Math.min(pages, page + 2);
+    for(let i = start; i <= end; i++){
+      const item = li(i, i===page? 'active' : '');
+      if(i!==page) item.addEventListener('click', (e)=>{ e.preventDefault(); loadUsers(i); });
+      ul.appendChild(item);
+    }
+
+    const next = li('›', '', page===pages);
+    if(!(page===pages)) next.addEventListener('click', (e)=>{ e.preventDefault(); loadUsers(page+1); });
+    ul.appendChild(next);
+  }
+
+  function bindTableButtons(){
+    document.querySelectorAll('#usersBody button[data-action]').forEach(btn => {
+      const action = btn.getAttribute('data-action');
+      const id = btn.getAttribute('data-id');
+      if(action === 'view'){
+        btn.addEventListener('click', ()=> openUserDetail(id));
+      }else if(action === 'role'){
+        btn.addEventListener('click', ()=> openChangeRoleModal(id, btn.getAttribute('data-username')));
+      }
+    });
+  }
+
+  async function openUserDetail(userId){
+    try{
+      const res = await apiFetch('/api/admin/query/users/' + encodeURIComponent(userId), { method: 'GET' });
+      const u = res.data;
+
+      // 兼容字段名
+      const uid = u.user_id ?? u.id ?? '';
+      const username = u.username ?? '';
+      const email = u.email ?? '';
+      const status = u.status ?? '';
+      const role = u.role ?? '';
+      const created = u.created_at ?? u.createdAt ?? '';
+      const lastLogin = u.last_login ?? u.last_login_at ?? '';
+      const age = u.age ?? '';
+      const gender = u.gender ?? '';
+      const avatar = u.avatar_url ?? u.avatar ?? '';
+      const bio = u.bio ?? '';
+      const matchCount = u.match_count ?? 0;
+
+      const tags = (u.tags || []).map(t => {
+        return escapeHtml(t.tag_name ?? t.name ?? t.tagName ?? '');
+      }).filter(Boolean).join(', ');
+
+      const container = document.getElementById('userDetailContent');
+      container.innerHTML = `
+        <div class="d-flex mb-3">
+          <img src="${escapeHtml(avatar)}" alt="avatar" class="rounded me-3" style="width:96px;height:96px;object-fit:cover;" onerror="this.style.display='none'">
+          <div>
+            <h5 class="mb-1">${escapeHtml(username)} <small class="text-muted">ID: ${escapeHtml(String(uid))}</small></h5>
+            <div>${escapeHtml(email)}</div>
+            <div class="small text-muted">年龄: ${escapeHtml(String(age))} · 性别: ${escapeHtml(gender)} · 状态: ${escapeHtml(status)} · 角色: ${escapeHtml(String(role))}</div>
+          </div>
+        </div>
+        <dl class="row">
+          <dt class="col-sm-3">注册时间</dt><dd class="col-sm-9">${escapeHtml(created)}</dd>
+          <dt class="col-sm-3">最后登录</dt><dd class="col-sm-9">${escapeHtml(lastLogin || 'N/A')}</dd>
+          <dt class="col-sm-3">标签</dt><dd class="col-sm-9">${tags || '—'}</dd>
+          <dt class="col-sm-3">匹配数量</dt><dd class="col-sm-9">${escapeHtml(String(matchCount))}</dd>
+          <dt class="col-sm-3">简介</dt><dd class="col-sm-9"><pre style="white-space:pre-wrap;border:none;background:transparent;padding:0">${escapeHtml(bio)}</pre></dd>
+        </dl>
+      `;
+
+      const modal = new bootstrap.Modal(document.getElementById('userDetailModal'));
+      modal.show();
+    }catch(err){
+      console.error(err);
+      insertContainer('danger', err.message || '无法加载用户详情');
+    }
+  }
+
+  function openChangeRoleModal(userId, username){
+    document.getElementById('changeRoleUserId').value = userId;
+    document.getElementById('changeRoleUsername').textContent = username || '';
+    document.getElementById('newRole').value = '0';
+    const modal = new bootstrap.Modal(document.getElementById('changeRoleModal'));
+    modal.show();
+  }
+
+  document.getElementById('submitChangeRole').addEventListener('click', async ()=>{
+    const userId = document.getElementById('changeRoleUserId').value;
+    const newRole = parseInt(document.getElementById('newRole').value, 10);
+    if(!userId) return insertContainer('warning', '无效用户');
+    try{
+      const res = await apiFetch('/api/admin/set/users/' + encodeURIComponent(userId) + '/role', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ role: newRole })
+      });
+      insertContainer('success', res.message || '角色已更新');
+      const modalEl = document.getElementById('changeRoleModal');
+      const modal = bootstrap.Modal.getInstance(modalEl);
+      if(modal) modal.hide();
+      loadUsers(currentPage);
+    }catch(err){
+      console.error(err);
+      if(err && err.errors) showErrors(err.errors, 3);
+      else insertContainer('danger', err.message || '修改角色失败');
+    }
+  });
+
+  document.getElementById('searchBtn').addEventListener('click', ()=> loadUsers(1));
+  document.getElementById('searchInput').addEventListener('keydown', (e)=>{ if(e.key === 'Enter') loadUsers(1); });
+
+  // XSS 简单转义
+  function escapeHtml(unsafe){
+    if(unsafe === null || unsafe === undefined) return '';
+    return String(unsafe)
+      .replaceAll('&', '&amp;')
+      .replaceAll('<', '&lt;')
+      .replaceAll('>', '&gt;')
+      .replaceAll('"', '&quot;')
+      .replaceAll("'", '&#039;');
+  }
+
+  // 首次加载
+  document.addEventListener('DOMContentLoaded', ()=> loadUsers(1));
+})();
+</script>
+{% endblock %}

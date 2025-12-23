@@ -58,7 +58,7 @@ document.addEventListener("DOMContentLoaded", () => {
         if (isAuthenticated && (res.data.role || 0)) {
             const a0 = document.createElement('a');
             a0.className = 'btn btn-primary me-2';
-            a0.href = '/admin/info';
+            a0.href = '/admin';
             a0.textContent = '管理员界面';
             cardMenu.appendChild(a0);
         }

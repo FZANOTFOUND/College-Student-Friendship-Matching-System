@@ -155,12 +155,26 @@ document.addEventListener("DOMContentLoaded", () => {
                 </a>
             `;
             navMenu.appendChild(notifications);
+            console.log(res);
+            if (res.data.role >= 1){
+                const admin = document.createElement('li');
+                admin.className = 'nav-item';
+                admin.innerHTML = '<a class="nav-link" href="/admin">管理员界面</a >';
+                navMenu.appendChild(admin);
+            }
+
 
             // 个人界面链接
             const profileItem = document.createElement('li');
             profileItem.className = 'nav-item';
             profileItem.innerHTML = '<a class="nav-link" href="/account/profile">个人界面</a >';
             navMenu.appendChild(profileItem);
+
+
+            const conversation = document.createElement('li');
+            conversation.className = 'nav-item';
+            conversation.innerHTML = '<a class="nav-link" href="/conversations">对话</a >';
+            navMenu.appendChild(conversation);
 
             // 登出链接
             const logoutItem = document.createElement('li');

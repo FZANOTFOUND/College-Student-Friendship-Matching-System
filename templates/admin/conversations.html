@@ -1,0 +1,297 @@
+{% extends "base2.html" %}
+
+{% block title %}会话监控 - 管理员{% endblock %}
+
+{% block css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/conversations.css') }}">
+<style>
+body{
+    height: 105vh;
+}
+  /* 覆盖并增加监控页面样式 */
+  .conversation-list { padding: 0; }
+  .monitor-filters { padding: 10px; background:#fff; border-bottom:1px solid #ddd; }
+  .conversation-item.sensitive { background: #fff6f6; }
+  .conv-meta { font-size: 0.85rem; color: #666; }
+  .msg-keyword { background: #ffeeba; padding: 0 3px; border-radius: 3px; }
+  .sensitive-badge { color: #fff; background: #d9534f; padding: 2px 6px; border-radius: 10px; font-size:0.75rem; }
+  .analysis-panel { background:#fff; border:1px solid #eee; padding:10px; margin-top:10px; }
+  .no-input-note { font-size:0.9rem; color:#888; }
+</style>
+{% endblock %}
+
+{% block content2 %}
+<div class="container-fluid chat-page">
+  <div class="row">
+
+    <!-- 左侧：筛选 + 会话列表 -->
+    <div class="col-4 conversation-list">
+      <div class="monitor-filters">
+        <div class="row g-2">
+          <div class="col-6">
+            <input id="filterUserId" class="form-control form-control-sm" placeholder="User ID">
+          </div>
+          <div class="col-6">
+            <select id="filterSensitive" class="form-select form-select-sm">
+              <option value="">所有对话</option>
+              <option value="true">有敏感</option>
+              <option value="false">无敏感</option>
+            </select>
+          </div>
+          <div class="col-6">
+            <input id="filterStart" type="datetime-local" class="form-control form-control-sm" placeholder="开始时间">
+          </div>
+          <div class="col-6">
+            <input id="filterEnd" type="datetime-local" class="form-control form-control-sm" placeholder="结束时间">
+          </div>
+          <div class="col-8">
+            <button id="filterBtn" class="btn btn-sm btn-primary w-100">筛选</button>
+          </div>
+          <div class="col-4">
+            <button id="clearBtn" class="btn btn-sm btn-secondary w-100">清除</button>
+          </div>
+        </div>
+      </div>
+
+      <div id="conversation-list" style="overflow-y:auto; height: calc(100% - 140px);"></div>
+      <nav><ul class="pagination pagination-sm m-2" id="conv-pagination"></ul></nav>
+    </div>
+
+    <!-- 右侧：对话详情 + 分析 -->
+    <div class="col-8 chat-main">
+      <div class="chat-header" id="chat-title">请选择一个对话以查看详情</div>
+
+      <div id="message-list" class="chat-box"></div>
+
+      <div class="analysis-panel" id="analysis-panel" style="display:none;">
+        <h6>敏感检测分析</h6>
+        <div id="analysis-content"></div>
+      </div>
+
+      <div class="p-2">
+        <div class="no-input-note">（管理员监控界面 — 不提供发送/回复功能）</div>
+      </div>
+    </div>
+
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// 管理员会话监控脚本，依赖 utils.js 中的 apiFetch / insertContainer / showErrors
+(function(){
+  let currentPage = 1;
+  const perPage = 20;
+  let currentConvId = null;
+  let currentDetectionKeywords = [];
+
+  function buildQueryParams(params){
+    return Object.keys(params)
+      .filter(k => params[k] !== undefined && params[k] !== null && params[k] !== '')
+      .map(k => encodeURIComponent(k) + '=' + encodeURIComponent(params[k]))
+      .join('&');
+  }
+
+  function toIsoWithZ(datetimeLocal){
+    if(!datetimeLocal) return '';
+    // datetime-local -> treat as local time, convert to ISO with Z by assuming it's local and using Date
+    try{
+      const d = new Date(datetimeLocal);
+      return d.toISOString();
+    }catch(e){ return ''; }
+  }
+
+  async function loadConversations(page=1){
+    currentPage = page;
+    const userId = document.getElementById('filterUserId').value.trim();
+    const hasSensitive = document.getElementById('filterSensitive').value;
+    const startDate = toIsoWithZ(document.getElementById('filterStart').value);
+    const endDate = toIsoWithZ(document.getElementById('filterEnd').value);
+
+    const q = buildQueryParams({ page, per_page: perPage, user_id: userId || undefined, has_sensitive: hasSensitive || undefined, start_date: startDate || undefined, end_date: endDate || undefined });
+    try{
+      const res = await apiFetch('/api/admin/conversations?' + q, { method: 'GET' });
+      renderConversationList(res.data.items, res.data.page, res.data.pages, res.data.total);
+    }catch(err){
+      console.error(err);
+      if(err && err.errors) showErrors(err.errors, 3);
+      else insertContainer('danger', err.message || '加载会话失败');
+    }
+  }
+
+  function renderConversationList(items, page, pages, total){
+    const container = document.getElementById('conversation-list');
+    container.innerHTML = '';
+    if(!items || items.length === 0){
+      container.innerHTML = '<div class="p-3 text-center text-muted">未找到对话</div>';
+      renderPagination(page, pages);
+      return;
+    }
+
+    items.forEach(item => {
+      const el = document.createElement('div');
+      el.className = 'conversation-item d-flex align-items-start';
+      if(item.sensitive_detected) el.classList.add('sensitive');
+      const title = (item.participants || []).map(p=>p.username).join(', ') || ('#' + item.conv_id);
+      const lastTime = item.last_message_time ? new Date(item.last_message_time).toLocaleString() : '-';
+      const lastMsg = item.last_message ? escapeHtml(item.last_message) : '';
+
+      el.innerHTML = `
+        <div class="flex-grow-1">
+          <div class="d-flex justify-content-between">
+            <div><strong>${escapeHtml(title)}</strong></div>
+            <div class="conv-meta">${escapeHtml(lastTime)}</div>
+          </div>
+          <div class="small text-muted mt-1">消息数: ${escapeHtml(String(item.message_count || 0))} · 参与者: ${escapeHtml(String(item.participant_count || 0))} ${item.sensitive_detected? '<span class="sensitive-badge ms-2">敏感</span>':''}</div>
+          <div class="mt-1 text-truncate">${lastMsg}</div>
+        </div>
+      `;
+
+      el.addEventListener('click', ()=>{
+        selectConversation(item.conv_id);
+      });
+
+      container.appendChild(el);
+    });
+
+    renderPagination(page, pages);
+  }
+
+  function renderPagination(page, pages){
+    const ul = document.getElementById('conv-pagination');
+    ul.innerHTML = '';
+    if(!pages || pages <= 1) return;
+
+    function li(content, active, disabled, cb){
+      const li = document.createElement('li');
+      li.className = 'page-item' + (active? ' active':'') + (disabled? ' disabled':'');
+      li.innerHTML = `<a class="page-link" href="#">${content}</a>`;
+      if(cb && !disabled) li.addEventListener('click', (e)=>{ e.preventDefault(); cb(); });
+      return li;
+    }
+
+    ul.appendChild(li('‹', false, page===1, ()=>loadConversations(page-1)));
+    const start = Math.max(1, page-2); const end = Math.min(pages, page+2);
+    for(let i=start;i<=end;i++) ul.appendChild(li(i, i===page, false, ()=>loadConversations(i)));
+    ul.appendChild(li('›', false, page===pages, ()=>loadConversations(page+1)));
+  }
+
+  async function selectConversation(convId){
+    currentConvId = convId;
+    try{
+      const res = await apiFetch('/api/admin/conversations/' + encodeURIComponent(convId), { method: 'GET' });
+      renderConversationDetail(res.data);
+    }catch(err){
+      console.error(err);
+      if(err && err.errors) showErrors(err.errors, 3);
+      else insertContainer('danger', err.message || '加载会话详情失败');
+    }
+  }
+
+  function renderConversationDetail(data){
+    const header = document.getElementById('chat-title');
+    const msgList = document.getElementById('message-list');
+    const analysisPanel = document.getElementById('analysis-panel');
+    const analysisContent = document.getElementById('analysis-content');
+
+    const participants = (data.participants || []).map(p=>`${escapeHtml(p.username)}(ID:${escapeHtml(String(p.user_id))})`).join(', ');
+    header.innerHTML = `会话 ${escapeHtml(String(data.conv_id))} · 参与者: ${participants}`;
+
+    // messages in recent_messages are ordered newest-first in backend; display oldest->newest
+    const msgs = (data.recent_messages || []).slice().reverse();
+    msgList.innerHTML = '';
+    if(msgs.length === 0) msgList.innerHTML = '<div class="text-center text-muted p-3">没有消息</div>';
+
+    currentDetectionKeywords = (data.sensitive_analysis && data.sensitive_analysis.detection_keywords) || [];
+
+    msgs.forEach(msg => {
+      const isSensitive = (data.sensitive_analysis && data.sensitive_analysis.sensitive_messages || []).some(sm => sm.msg_id === msg.msg_id);
+      const sideClass = 'other';
+      const el = document.createElement('div');
+      el.className = 'chat-message ' + sideClass;
+      const time = msg.sent_at ? new Date(msg.sent_at).toLocaleString() : '';
+      const content = highlightKeywords(escapeHtml(msg.content || ''), currentDetectionKeywords);
+
+      el.innerHTML = `
+        <div>
+          <div class="chat-bubble ${isSensitive? 'border border-danger':''}">${content}</div>
+          <div class="chat-time">${escapeHtml(msg.sender_name || ('ID:'+String(msg.sender_id)))} · ${escapeHtml(time)}</div>
+        </div>
+      `;
+
+      msgList.appendChild(el);
+    });
+
+    // scroll to bottom
+    msgList.scrollTop = msgList.scrollHeight;
+
+    // analysis
+    if(data.sensitive_analysis){
+      analysisPanel.style.display = 'block';
+      const sa = data.sensitive_analysis;
+      analysisContent.innerHTML = `
+        <div>已检查消息数: <strong>${escapeHtml(String(sa.total_checked))}</strong></div>
+        <div>敏感消息数: <strong>${escapeHtml(String(sa.sensitive_count))}</strong></div>
+        <div class="mt-2"><strong>检测关键词：</strong> ${escapeHtml((sa.detection_keywords || []).join(', '))}</div>
+        <div class="mt-2"><strong>敏感消息示例：</strong></div>
+      `;
+
+      if(sa.sensitive_messages && sa.sensitive_messages.length){
+        sa.sensitive_messages.forEach(sm => {
+          const div = document.createElement('div');
+          div.className = 'border rounded p-2 mb-2';
+          div.innerHTML = `
+            <div class="small text-muted">${escapeHtml(sm.sent_at)} · ${escapeHtml(sm.sender_name || ('ID:'+String(sm.sender_id)))}</div>
+            <div>${highlightKeywords(escapeHtml(sm.content || ''), sa.detection_keywords || [])}</div>
+            <div class="small text-danger">匹配关键词: ${escapeHtml((sm.keywords || []).join(', '))}</div>
+          `;
+          analysisContent.appendChild(div);
+        });
+      } else {
+        analysisContent.innerHTML += '<div class="text-muted">未检测到敏感消息。</div>';
+      }
+    } else {
+      analysisPanel.style.display = 'none';
+    }
+  }
+
+  function highlightKeywords(text, keywords){
+    if(!keywords || !keywords.length) return text;
+    // 简单替换关键词并包裹样式；注意 escapeHtml 已执行
+    keywords.forEach(k => {
+      if(!k) return;
+      const re = new RegExp(escapeRegExp(k), 'ig');
+      text = text.replace(re, match => `<span class=\"msg-keyword\">${match}</span>`);
+    });
+    return text;
+  }
+
+  function escapeRegExp(s){ return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); }
+
+  // XSS 简单转义
+  function escapeHtml(unsafe){
+    if(unsafe === null || unsafe === undefined) return '';
+    return String(unsafe)
+      .replaceAll('&', '&amp;')
+      .replaceAll('<', '&lt;')
+      .replaceAll('>', '&gt;')
+      .replaceAll('"', '&quot;')
+      .replaceAll("'", '&#039;');
+  }
+
+  // 事件绑定
+  document.getElementById('filterBtn').addEventListener('click', ()=> loadConversations(1));
+  document.getElementById('clearBtn').addEventListener('click', ()=>{
+    document.getElementById('filterUserId').value = '';
+    document.getElementById('filterSensitive').value = '';
+    document.getElementById('filterStart').value = '';
+    document.getElementById('filterEnd').value = '';
+    loadConversations(1);
+  });
+
+  // 初始加载
+  document.addEventListener('DOMContentLoaded', ()=> loadConversations(1));
+})();
+</script>
+{% endblock %}

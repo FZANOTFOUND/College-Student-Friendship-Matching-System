@@ -204,3 +204,5 @@ def create_conversation():
         'code': 201,
         'data': {'conv_id': conv.conv_id}
     })
+
+

@@ -24,7 +24,6 @@ from decorators import *
 import traceback
 
 
-
 @api_account_bp.route('/register', methods=['POST'])
 def register():
     try:
@@ -108,6 +107,14 @@ def login():
                 }), 400
 
             if check_password_hash(user.password_hash, password):
+                if user.status.lower() != 'active':
+                    return jsonify({
+                        "code": 403,
+                        "message": "用户已封禁",
+                        "errors": {
+                            "系统": ["用户已封禁"]
+                        }
+                    }), 403
                 remember = form_data.get("remember", False)
                 expires = (
                     timedelta(days=7) if remember
@@ -201,7 +208,7 @@ def get_email_captcha():
         message = Message(subject='流萤快报', recipients=[email],
                           html=render_template("email.html", code=code, hour=t.tm_hour))
         mail.send(message)
-        email_captcha = EmailVerification(email=email, code=code, expire_time = expire_time)
+        email_captcha = EmailVerification(email=email, code=code, expire_time=expire_time)
         db.session.add(email_captcha)
         db.session.commit()
         db.session.close()
@@ -236,6 +243,7 @@ def get_profile():
         return jsonify({'code': 200, 'data': user.to_dict()})
     except Exception as e:
         return jsonify({'code': 500, 'message': 'Inner Error'}), 500
+
 
 @api_account_bp.route('/profile/change', methods=['PUT'])
 @my_jwt_required(limit=0, api=True)

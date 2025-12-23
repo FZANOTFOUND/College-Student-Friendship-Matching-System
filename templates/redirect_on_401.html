@@ -2,7 +2,7 @@
 {% block title %}redirect{% endblock %}
 {% block scripts %}
 <script>
-    insertContainer("info", "请登录, 5秒后自动跳转");
+    insertContainer("info", "请登录, 2秒后自动跳转");
     console.log("insert"+insertContainer);
     setTimeout(function () {
         window.location.href = "/account/login";
