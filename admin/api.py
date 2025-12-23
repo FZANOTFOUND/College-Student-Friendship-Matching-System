@@ -276,6 +276,60 @@ def update_user_role(user_id):
         }), 500
 
 
+@api_admin_bp.route('/users/<int:user_id>/status', methods=['PUT'])
+# @my_jwt_required(limit=1, api=True)
+def update_user_status(user_id):
+    """5.3 封禁/解封用户"""
+    try:
+        data = request.get_json()
+        if not data or 'status' not in data:
+            return jsonify({
+                "code": 400,
+                "message": "缺少状态参数"
+            }), 400
+
+        new_status = data['status']
+        if new_status not in ['active', 'suspended']:
+            return jsonify({
+                "code": 400,
+                "message": "状态必须是 'active' 或 'suspended'"
+            }), 400
+
+        # 查找用户
+        user = User.query.get(user_id)
+        if not user:
+            return jsonify({
+                "code": 404,
+                "message": "用户不存在"
+            }), 404
+
+        # 更新状态
+        old_status = user.status
+        user.status = new_status
+        user.updated_at = datetime.now()
+
+        # 可选：记录封禁原因
+        if 'reason' in data and new_status == 'suspended':
+            # 可以在这里添加封禁记录到数据库
+            pass
+
+        db.session.commit()
+
+        return jsonify({
+            "code": 200,
+            "message": f"用户状态已更新：{old_status} -> {new_status}",
+            "data": user.to_dict()
+        })
+    except Exception as e:
+        traceback.print_exc()
+        db.session.rollback()
+        return jsonify({
+            "code": 500,
+            "message": "服务器内部错误",
+            "errors": {"server": [str(e)]}
+        }), 500
+
+
 @api_admin_bp.route('/conversations', methods=['GET'])
 @my_jwt_required(limit=1, api=True)
 def get_conversations_monitor():

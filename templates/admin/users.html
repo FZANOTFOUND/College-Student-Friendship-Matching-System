@@ -157,12 +157,13 @@
         <td>${(page-1)*perPage + idx + 1}</td>
         <td>${escapeHtml(user.username ?? '')}</td>
         <td>${escapeHtml(user.email ?? '')}</td>
-        <td>${escapeHtml(user.status ?? '')}</td>
+        <td style=${escapeHtml(user.status ?? '').toLowerCase()==='active'?"color:black":"color:red"}>${escapeHtml(user.status ?? '').toLowerCase()==='active'?"正常":"封禁中"}</td>
         <td>${escapeHtml(String(user.role ?? ''))}</td>
         <td>${escapeHtml(created)}</td>
         <td>
           <button class="btn btn-sm btn-outline-primary me-1" data-action="view" data-id="${uid}">查看</button>
           <button class="btn btn-sm btn-outline-secondary" data-action="role" data-id="${uid}" data-username="${escapeHtml(user.username ?? '')}">修改角色</button>
+         <button class="btn btn-sm btn-outline-secondary" data-type=${user.status.toLowerCase()==='active'?"1":"0"} data-action="ban" data-id="${uid}" data-username="${escapeHtml(user.username ?? '')}">${user.status.toLowerCase()==='active'?"封禁用户":"解禁用户"}</button>
         </td>`;
       tbody.appendChild(tr);
     });
@@ -170,7 +171,6 @@
     renderPagination(page, pages, total);
     bindTableButtons();
   }
-
   function renderPagination(page, pages, total){
     const ul = document.getElementById('pagination');
     ul.innerHTML = '';
@@ -200,25 +200,69 @@
     ul.appendChild(next);
   }
 
-  function bindTableButtons(){
+function bindTableButtons(){
     document.querySelectorAll('#usersBody button[data-action]').forEach(btn => {
-      const action = btn.getAttribute('data-action');
-      const id = btn.getAttribute('data-id');
-      if(action === 'view'){
+    const action = btn.getAttribute('data-action');
+    const id = btn.getAttribute('data-id');
+    if(action === 'view'){
         btn.addEventListener('click', ()=> openUserDetail(id));
-      }else if(action === 'role'){
+    }else if(action === 'role'){
         btn.addEventListener('click', ()=> openChangeRoleModal(id, btn.getAttribute('data-username')));
-      }
-    });
-  }
+    }else if(action === 'ban'){
+        btn.addEventListener('click', async ()=>{
+            clearContainer();
+        const type = btn.getAttribute('data-type');
+        // data-type: "1" 表示当前 active（点击后要封禁），"0" 表示当前 suspended（点击后要解禁）
+        const targetingUsername = btn.getAttribute('data-username') || '';
+        const targetId = btn.getAttribute('data-id');
+        const willSuspend = String(type) === '1';
+        const actionText = willSuspend ? '封禁' : '解禁';
 
+
+        const confirmed = confirm(`${actionText} 用户 ${targetingUsername || ('ID:' + targetId)} ?`);
+        if(!confirmed) return;
+
+
+        let reason = undefined;
+        if(willSuspend){
+        // 可选填写原因
+            reason = prompt('请输入封禁原因（可选）', '') || undefined;
+        }
+
+
+        try{
+            await updateUserStatus(targetId, willSuspend ? 'suspended' : 'active', reason);
+            insertContainer('success', `用户已${willSuspend ? '封禁' : '解禁'}`);
+            loadUsers(currentPage);
+        }catch(err){
+            console.error(err);
+            if(err && err.errors) showErrors(err.errors, 3);
+            else insertContainer('danger', err.message || `${actionText} 用户失败`);
+        }
+        });
+        }
+    });
+}
+    async function updateUserStatus(userId, newStatus, reason){
+if(!userId) throw { message: '缺少用户ID' };
+const body = { status: newStatus };
+if(reason) body.reason = reason;
+
+
+const res = await apiFetch('/api/admin/users/' + encodeURIComponent(userId) + '/status', {
+method: 'PUT',
+headers: { 'Content-Type': 'application/json' },
+body: JSON.stringify(body)
+});
+return res;
+}
   async function openUserDetail(userId){
     try{
       const res = await apiFetch('/api/admin/query/users/' + encodeURIComponent(userId), { method: 'GET' });
       const u = res.data;
 
       // 兼容字段名
-      const uid = u.user_id ?? u.id ?? '';
+      const uid = u.user_id ?? '';
       const username = u.username ?? '';
       const email = u.email ?? '';
       const status = u.status ?? '';
@@ -269,6 +313,7 @@
     const modal = new bootstrap.Modal(document.getElementById('changeRoleModal'));
     modal.show();
   }
+
 
   document.getElementById('submitChangeRole').addEventListener('click', async ()=>{
     const userId = document.getElementById('changeRoleUserId').value;
