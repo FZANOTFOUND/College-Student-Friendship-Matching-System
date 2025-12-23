@@ -1,31 +1,170 @@
 {% extends "base.html" %}
 {% block title %}个人界面{% endblock %}
-{% block content %}
-<div class="row justify-content-center">
-    <div class="col-md-8">
-        <div class="card">
-            <div class="card-body">
-                <h4 class="card-title">个人界面</h4>
-                <p class="card-text">Hello. This page is accessible only to logged-in users.</p>
-                <a class="btn btn-primary me-2" href="/tags/edit">标签编辑</a>
-                <button  class="btn btn-outline-secondary" id="protected-logout">登出</button>
-            </div>
-        </div>
-    </div>
-</div>
-{% endblock %}
+
 {% block css %}
   <style>
-  body{
+    body{
       height: 100vh;
-  }
+    }
+
+    .profile-card {
+      max-width: 720px;
+      margin: 20px auto;
+    }
+
+    .profile-header {
+      display: flex;
+      gap: 16px;
+      align-items: center;
+      padding-bottom: 12px;
+      border-bottom: 1px solid #eee;
+    }
+
+    .profile-avatar {
+      width: 96px;
+      height: 96px;
+      border-radius: 8px;
+      object-fit: cover;
+      border: 1px solid #e6e6e6;
+      background: #f8f8f8;
+    }
+
+    .profile-info h5 {
+      margin: 0;
+      font-size: 1.25rem;
+      font-weight: 700;
+    }
+
+    .profile-info .email {
+      color: #666;
+      font-size: 0.95rem;
+      margin-top: 4px;
+    }
+
+    .profile-bio {
+      margin-top: 10px;
+      color: #444;
+      white-space: pre-wrap;
+    }
+
+    .profile-actions {
+      margin-top: 14px;
+      display:flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
   </style>
 {% endblock %}
+
+{% block content %}
+<div class="profile-card">
+  <div class="card">
+    <div class="card-body">
+      <div class="profile-header">
+        <img id="profile-avatar" class="profile-avatar"
+             src="https://userpic.codeforces.org/no-title.jpg"
+             alt="avatar">
+        <div class="profile-info">
+          <h5 id="profile-username">加载中...</h5>
+          <div id="profile-email" class="email"></div>
+        </div>
+      </div>
+
+      <div id="profile-bio" class="profile-bio text-muted">
+        <!-- 简介 -->
+      </div>
+
+      <div class="profile-actions">
+        <a class="btn btn-primary me-2" href="/tags/edit">标签编辑</a>
+        <a class="btn btn-primary me-2" href="/account/profile/edit">个人信息编辑</a>
+        <button class="btn btn-outline-secondary" id="protected-logout">登出</button>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
 {% block scripts %}
 <script>
-    document.addEventListener("DOMContentLoaded", () => {
-        const btn = document.getElementById("protected-logout");
-        btn.addEventListener("click", handleLogout);
-    });
+/*
+  account_protected.js (inline)
+  - 加载 /api/account/profile 并渲染头像/用户名/邮箱/简介
+  - 兼容项目中可能存在的全局 apiFetch/getCookie
+*/
+
+(function () {
+  // 全局辅助（如果 base.js 已提供 apiFetch/getCookie，优先使用）
+  const globalApiFetch = window.apiFetch;
+  const globalGetCookie = window.getCookie;
+
+  async function localApiFetch(path, options = {}) {
+    options = options || {};
+    options.headers = options.headers || {};
+    options.credentials = "include";
+
+    // GET 不需要 CSRF，但保留通用写法
+    const csrf = (typeof globalGetCookie === 'function')
+      ? globalGetCookie('csrf_access_token')
+      : (document.cookie.split('; ').find(r => r.startsWith('csrf_access_token='))?.split('=')[1] || '');
+    if (csrf) options.headers['X-CSRF-TOKEN'] = csrf;
+
+    const resp = await fetch(path, options);
+    const json = await resp.json();
+    return json;
+  }
+
+  const api = (typeof globalApiFetch === 'function') ? globalApiFetch : localApiFetch;
+
+  function setProfileUI(data) {
+    const avatarEl = document.getElementById('profile-avatar');
+    const usernameEl = document.getElementById('profile-username');
+    const emailEl = document.getElementById('profile-email');
+    const bioEl = document.getElementById('profile-bio');
+
+    const defaultAvatar = 'https://userpic.codeforces.org/no-title.jpg';
+
+    avatarEl.src = data.avatar_url || defaultAvatar;
+    avatarEl.onerror = function () { this.src = defaultAvatar; };
+
+    usernameEl.textContent = data.username || '(未设置)';
+    emailEl.textContent = data.email || '';
+    bioEl.textContent = data.bio || '';
+  }
+
+  async function loadProfile() {
+    try {
+      const res = await api('/api/account/profile', { method: 'GET' });
+      if (res && (res.code === 200 || res.code === 201) && res.data) {
+        setProfileUI(res.data);
+      } else {
+        // 无权访问或未登录，显示提示
+        document.getElementById('profile-username').textContent = '无法加载用户信息';
+        document.getElementById('profile-email').textContent = '';
+        document.getElementById('profile-bio').textContent = '';
+      }
+    } catch (e) {
+      console.error('loadProfile error', e);
+      document.getElementById('profile-username').textContent = '加载失败';
+    }
+  }
+
+  document.addEventListener('DOMContentLoaded', () => {
+    // 绑定登出（base.js 中已经定义 handleLogout）
+    const logoutBtn = document.getElementById('protected-logout');
+    if (logoutBtn) {
+      logoutBtn.addEventListener('click', function () {
+        if (typeof handleLogout === 'function') {
+          handleLogout();
+        } else {
+          // fallback: call logout endpoint then redirect
+          fetch('/api/account/logout', { method: 'POST', credentials: 'include' })
+            .finally(() => window.location.href = '/');
+        }
+      });
+    }
+
+    loadProfile();
+  });
+})();
 </script>
 {% endblock %}

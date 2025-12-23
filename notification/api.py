@@ -1,10 +1,12 @@
 from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from extensions import db
+from werkzeug.datastructures import MultiDict
 from models import Notification
 from . import api_notification_bp
 from decorators import *
-
+from .forms import NotificationForm
+import traceback
 
 @api_notification_bp.route('/all', methods=['GET'])
 @my_jwt_required(limit=0, api=True)
@@ -86,3 +88,43 @@ def get_unread_count():
     ).count()
 
     return jsonify({'code': 200, 'data': {'count': count}})
+
+
+@api_notification_bp.route('/create', methods=['PUT'])
+@my_jwt_required(limit=1, api=True)
+def create_notification():
+    try:
+        if request.is_json:
+            json_data = request.get_json()
+            form_data = MultiDict(json_data)
+        else:
+            form_data = request.form
+        form = NotificationForm(form_data)
+        if form.validate():
+            nt = Notification(recipient_id=form_data["recipient_id"],type=form_data["type"],content=form_data["content"],related_id=get_jwt_identity())
+            db.session.add(nt)
+            db.session.commit()
+            return jsonify({
+                "code": 200,
+                "message": "ok"
+            })
+        else:
+            return jsonify({
+                "code": 400,
+                "message": "格式错误",
+                "errors": form.errors,
+                "data": {
+
+                }
+            }), 400
+    except Exception as e:
+        return jsonify({
+            "code": 500,
+            "message": "服务器错误",
+            "errors": {
+                "服务器": [str(e)],
+            },
+            "data": {
+
+            }
+        }), 500

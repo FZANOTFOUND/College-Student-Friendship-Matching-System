@@ -159,7 +159,7 @@ document.addEventListener("DOMContentLoaded", () => {
             // 个人界面链接
             const profileItem = document.createElement('li');
             profileItem.className = 'nav-item';
-            profileItem.innerHTML = '<a class="nav-link" href="/account/protected">个人界面</a >';
+            profileItem.innerHTML = '<a class="nav-link" href="/account/profile">个人界面</a >';
             navMenu.appendChild(profileItem);
 
             // 登出链接

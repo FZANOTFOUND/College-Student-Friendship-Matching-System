@@ -1,0 +1,113 @@
+/* 页面整体高度（扣掉 navbar） */
+.chat-page {
+  height: calc(100vh - 70px);
+}
+
+/* row 撑满 */
+.chat-page > .row {
+  height: 100%;
+}
+
+/* 左侧会话栏 */
+.conversation-list {
+  height: 100%;
+  background: #fff;
+  border-right: 1px solid #ddd;
+  overflow-y: auto;
+}
+
+/* 会话项 */
+.conversation-item {
+  padding: 10px;
+  border-bottom: 1px solid #eee;
+  cursor: pointer;
+}
+.conversation-item:hover {
+  background: #f5f5f5;
+}
+
+/* 右侧聊天主区域 */
+.chat-main {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+/* 聊天标题 */
+.chat-header {
+  padding: 10px;
+  border-bottom: 1px solid #ddd;
+  background: #fff;
+  font-weight: bold;
+}
+
+/* 消息区（唯一滚动） */
+.chat-box {
+  flex: 1;
+  background: #f5f5f5;
+  padding: 10px;
+  overflow-y: auto;
+}
+
+/* 消息行 */
+.chat-message {
+  display: flex;
+  margin-bottom: 10px;
+}
+
+.chat-message.me {
+  justify-content: flex-end;
+}
+
+.chat-message.other {
+  justify-content: flex-start;
+}
+
+/* 气泡 */
+.chat-bubble {
+  max-width: 60%;
+  padding: 8px 12px;
+  border-radius: 10px;
+  word-break: break-word;
+  position: relative;
+}
+
+/* 我的消息 */
+.chat-message.me .chat-bubble {
+  background: #95ec69;
+  border-top-right-radius: 0;
+}
+
+/* 对方消息 */
+.chat-message.other .chat-bubble {
+  background: #ffffff;
+  border-top-left-radius: 0;
+}
+
+/* 时间 */
+.chat-time {
+  font-size: 0.7rem;
+  color: #999;
+  margin-top: 4px;
+  text-align: right;
+}
+
+/* 输入区 */
+.chat-input {
+  padding: 10px;
+  border-top: 1px solid #ddd;
+  background: #fff;
+}
+
+/* 推荐用户 */
+.recommend-user {
+  padding: 8px;
+  border-bottom: 1px dashed #ddd;
+  cursor: pointer;
+}
+.recommend-user:hover {
+  background: #f8f9fa;
+}
+.recommend-user button {
+  white-space: nowrap;
+}

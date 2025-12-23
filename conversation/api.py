@@ -5,11 +5,10 @@ from decorators import my_jwt_required
 from extensions import db
 from models import Conversation, ConversationParticipant, Message, User, Notification
 from datetime import datetime
+from . import api_conversation_bp
 
-api_conversation_bp = Blueprint('api_conversation', __name__, url_prefix='/api/conversations')
 
-
-@api_conversation_bp.route('', methods=['GET'])
+@api_conversation_bp.route('/all', methods=['GET'])
 @jwt_required()
 def get_conversations():
     """获取当前用户的所有对话"""

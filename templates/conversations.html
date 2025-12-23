@@ -1,0 +1,48 @@
+{% extends "base2.html" %}
+{% block title %}对话{% endblock %}
+
+{% block css %}
+ <link rel="stylesheet" href="{{ url_for('static', filename='css/conversations.css') }}">
+    <style>
+  body{
+      height: 105vh;
+  }
+  </style>
+{% endblock %}
+
+{% block content2 %}
+<div class="container-fluid chat-page">
+  <div class="row">
+
+    <!-- 左侧 -->
+    <div class="col-4 conversation-list">
+      <h6 class="p-2 border-bottom">💬 我的会话</h6>
+      <div id="conversation-list"></div>
+
+      <h6 class="p-2 border-bottom mt-2">✨ 推荐用户</h6>
+      <div id="recommend-list"></div>
+    </div>
+
+    <!-- 右侧 -->
+    <div class="col-8 chat-main">
+      <div class="chat-header" id="chat-title">
+        请选择一个对话
+      </div>
+
+      <div id="message-list" class="chat-box"></div>
+
+      <div class="chat-input">
+        <div class="input-group">
+          <input type="text" id="message-input" class="form-control" placeholder="输入消息">
+          <button class="btn btn-primary" id="send-btn">发送</button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+  <script src="{{ url_for('static', filename='js/conversations.js') }}"></script>
+{% endblock %}

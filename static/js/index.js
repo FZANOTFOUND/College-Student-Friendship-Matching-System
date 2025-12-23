@@ -23,6 +23,7 @@ document.addEventListener("DOMContentLoaded", () => {
         cardTitle.className = 'card-title';
         cardText.className = 'card-text';
         a1.className = 'btn btn-primary me-2';
+
         console.log("是否登录：" + isAuthenticated);
         if (isAuthenticated) {
             const username = res.data.username || '';
@@ -37,9 +38,11 @@ document.addEventListener("DOMContentLoaded", () => {
             cardText.innerHTML = `您已使用 <strong>${email || ''}</strong> 登录.`; // 保留加粗样式
 
 
-            a1.href = '/account/protected';
+            a1.href = '/account/profile';
 
             a1.textContent = '个人界面';
+
+
         } else {
             cardTitle.textContent = "欢迎访问 神秘数据库大作业";
             cardText.textContent = "纳西妲世界第一可爱！！！";
@@ -60,10 +63,15 @@ document.addEventListener("DOMContentLoaded", () => {
             cardMenu.appendChild(a0);
         }
         if(isAuthenticated) {
+            const a3 = document.createElement('a');
             const a2 = document.createElement('button');
+            a3.href = '/conversations'
+            a3.textContent = '对话'
+            a3.className = 'btn btn-primary me-2';
             a2.className = 'btn btn-outline-secondary';
             a2.textContent = '登出';
             a2.addEventListener('click', handleLogout)
+            cardMenu.appendChild(a3);
             cardMenu.appendChild(a2);
         }
         else{

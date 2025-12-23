@@ -1,4 +1,5 @@
-from . import notification_bp
+from flask import render_template, redirect, url_for, request, flash
+from . import conversation_bp
 from models import User
 import string
 import random
@@ -15,13 +16,7 @@ from models import EmailVerification, User
 from decorators import *
 
 
-@notification_bp.route('/')
+@conversation_bp.route('/', methods=['GET'])
 @my_jwt_required(limit=0, api=False)
-def notifications_page():
-    return render_template('notifications.html')
-
-
-@notification_bp.route('/create')
-@my_jwt_required(limit=1, api=False)
-def notifications_create():
-    return render_template('notification_create.html')
+def home():
+    return render_template("conversations.html")

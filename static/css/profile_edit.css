@@ -1,0 +1,39 @@
+/* 简单样式调整，使表单在不同屏幕都好看 */
+.profile-edit-wrapper {
+  max-width: 900px;
+  margin: 20px auto;
+  background: #fff;
+  padding: 18px;
+  border-radius: 6px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+}
+
+.form-label {
+  font-weight: 600;
+}
+
+#avatar-preview {
+  width: 120px;
+  height: 120px;
+  object-fit: cover;
+  border-radius: 8px;
+  border: 1px solid #e6e6e6;
+  background: #f8f8f8;
+}
+
+.small-muted {
+  font-size: 0.85rem;
+  color: #777;
+}
+
+.actions {
+  display:flex;
+  gap:8px;
+  align-items:center;
+  margin-top:12px;
+}
+
+
+  body{
+      height: 100vh;
+  }

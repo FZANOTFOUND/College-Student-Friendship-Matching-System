@@ -27,7 +27,13 @@ def login():
     return render_template('account/login.html')
 
 
-@account_bp.route('/protected')
+@account_bp.route('/profile')
 @my_jwt_required(limit=0, api=False)
 def protected():
     return render_template('account/protected.html')
+
+
+@account_bp.route('/profile/edit')
+@my_jwt_required(limit=0, api=False)
+def edit():
+    return render_template('profile_edit.html')

@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+{% block title %}编辑个人资料{% endblock %}
+
+{% block css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/profile_edit.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid" style="padding-top: 75px;">
+  <div class="profile-edit-wrapper">
+    <h4 class="mb-3">编辑个人资料</h4>
+
+    <form id="profile-form" novalidate>
+      <div class="row g-3">
+
+        <div class="col-12 col-md-6">
+          <label class="form-label" for="username">用户名 *</label>
+          <input id="username" name="username" type="text" class="form-control" required>
+          <div class="invalid-feedback">请输入用户名</div>
+        </div>
+
+        <div class="col-6 col-md-3">
+          <label class="form-label" for="gender">性别</label>
+          <select id="gender" name="gender" class="form-select">
+            <option value="男">男</option>
+            <option value="女">女</option>
+            <option value="其他">其他</option>
+          </select>
+        </div>
+
+        <div class="col-6 col-md-3">
+          <label class="form-label" for="age">年龄</label>
+          <input id="age" name="age" type="number" min="0" max="200" class="form-control">
+        </div>
+
+        <div class="col-12">
+          <label class="form-label" for="bio">个人简介</label>
+          <textarea id="bio" name="bio" class="form-control" rows="4" maxlength="100"
+                    placeholder="一句话介绍自己（最多100字）"></textarea>
+          <div class="small-muted mt-1">字数限制 100</div>
+        </div>
+
+        <div class="col-12 col-md-6">
+          <label class="form-label" for="avatar_url">头像 URL</label>
+          <input id="avatar_url" name="avatar_url" type="url" class="form-control" placeholder="https://...(可以从社交网站上CV)">
+          <div class="small-muted">填写图片 URL 后会显示预览（也可留空）</div>
+        </div>
+
+        <div class="col-12 col-md-6 d-flex align-items-center">
+          <div>
+            <img
+              id="avatar-preview"
+              src="https://userpic.codeforces.org/no-title.jpg"
+              alt="avatar">
+          </div>
+          <div class="ms-3 small-muted">
+            头像预览
+          </div>
+        </div>
+
+      </div>
+
+      <div class="actions">
+        <button type="submit" id="save-btn" class="btn btn-primary">保存</button>
+        <button type="button" id="cancel-btn" class="btn btn-outline-secondary">取消</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+    <script src="{{ url_for('static', filename='js/profile_edit.js') }}"></script>
+
+{% endblock %}

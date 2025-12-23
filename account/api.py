@@ -284,6 +284,13 @@ def update_profile():
                 'message': '个人资料更新成功',
                 'data': user.to_dict()
             })
+        else:
+            return jsonify({
+                "code": 400,
+                "message": "格式有误",
+                "errors": form.errors,
+                "data": {}
+            }), 400
     except Exception as e:
         traceback.print_exc()
         return jsonify({

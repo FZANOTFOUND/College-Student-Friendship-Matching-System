@@ -13,6 +13,7 @@ from admin import api_admin_bp, admin_bp
 from tags import api_tags_bp, tags_bp
 from models import *
 from notification import api_notification_bp, notification_bp
+from conversation import api_conversation_bp, conversation_bp
 # load env
 load_dotenv()
 
@@ -49,6 +50,8 @@ app.register_blueprint(api_tags_bp, url_prefix='/api/tags')
 app.register_blueprint(tags_bp, url_prefix='/tags')
 app.register_blueprint(notification_bp, url_prefix='/notifications')
 app.register_blueprint(api_notification_bp, url_prefix='/api/notification')
+app.register_blueprint(conversation_bp, url_prefix='/conversations')
+app.register_blueprint(api_conversation_bp, url_prefix='/api/conversations')
 
 
 @app.route('/')
