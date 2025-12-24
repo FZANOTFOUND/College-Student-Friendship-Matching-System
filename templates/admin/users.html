@@ -154,7 +154,7 @@
       const created = user.created_at ?? user.createdAt ?? '';
       const tr = document.createElement('tr');
       tr.innerHTML = `
-        <td>${(page-1)*perPage + idx + 1}</td>
+        <td>${user.user_id}</td>
         <td>${escapeHtml(user.username ?? '')}</td>
         <td>${escapeHtml(user.email ?? '')}</td>
         <td style=${escapeHtml(user.status ?? '').toLowerCase()==='active'?"color:black":"color:red"}>${escapeHtml(user.status ?? '').toLowerCase()==='active'?"正常":"封禁中"}</td>

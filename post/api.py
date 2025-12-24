@@ -305,9 +305,10 @@ def single_post():
                 "code": 404,
                 "message": "帖子不存在"
             }), 404
-        post.view_count += 1
-        db.session.add(post)
-        db.session.commit()
+        if post.status != "pending":
+            post.view_count += 1
+            db.session.add(post)
+            db.session.commit()
         return jsonify({
             "code": 200,
             "message": "ok",
@@ -382,7 +383,7 @@ def pending_comments():
 
 
 @api_post_bp.route('/post/get_comment', methods=['GET'])
-@my_jwt_required(limit=1, api=False)
+@my_jwt_required(limit=0, api=False)
 def get_comments():
     try:
         post_id = request.args.get("post_id")

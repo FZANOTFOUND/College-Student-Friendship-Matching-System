@@ -93,6 +93,11 @@
   color: #fff;
 }
 
+/* 发帖按钮样式微调 */
+.create-post-btn {
+  margin-right: 8px;
+}
+
 /* 分页居左（和卡片左对齐） */
 nav ul.pagination {
   margin-left: 0;
@@ -123,9 +128,14 @@ nav ul.pagination {
   <div class="posts-header">
     <h4 class="mb-0">所有帖子</h4>
 
-    <div class="search-wrapper">
-      <input id="searchInput" class="form-control form-control-sm" placeholder="搜索标题或内容" />
-      <button id="searchBtn" class="btn btn-sm btn-primary">搜索</button>
+    <div style="display:flex; align-items:center; gap:8px;">
+      <!-- 发帖按钮（新增） -->
+      <a href="/posts/create" class="btn btn-sm btn-success create-post-btn">发帖</a>
+
+      <div class="search-wrapper">
+        <input id="searchInput" class="form-control form-control-sm" placeholder="搜索标题或内容" />
+        <button id="searchBtn" class="btn btn-sm btn-primary">搜索</button>
+      </div>
     </div>
   </div>
 
